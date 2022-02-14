@@ -5,9 +5,14 @@ are broadly two distinct approaches
 
 * "Reconciliation-based KEMs", which build IND-CPA-based KEMs directly (perhaps
   the best-known example of this is the inital submission to CCS of the
-  ``NewHope'' scheme), and
+  ``[NewHope](https://www.usenix.org/conference/usenixsecurity16/technical-sessions/presentation/alkim)'' scheme), and
 * "Encryption-based KEMs", which the initial LPR-type scheme is used, before
-  building a KEM with the FO-transform.
+  building a KEM with the FO-transform. Every LWE-based NIST finalist is of this
+  form, meaning FrodoKEM, Saber, Kyber.
+
+Note for the NewHope scheme one has to be a little careful in the particular
+version you look at --- they later switched over to be an encryption-based KEM
+for their NIST submission, so in particular the round 2 NIST candidate NewHope is encryption-based, while the CCS paper linked above is reconcilliation-based
 
 I tried to write everything in terms of the [*Framework for Cryptographic
 Problems from Linear Algebra*](https://eprint.iacr.org/2019/282.pdf), while also
