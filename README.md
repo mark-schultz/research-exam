@@ -1,13 +1,22 @@
-TOPIC: Coding theory in Lattice Cryptography
+My Research Exam for my Masters at UCSD.
 
-Main idea is to survey uses of quantization within lattice-based cryptography.
-To keep separate from my work with Daniele, I will focus on quantization-type
-techniques within the realm of KEMS, which would require a different framework
-than that encryption. The main idea would be to build a good picture of the
-NewHope-type line of work of quantized KEMs, and perhaps build a framework with
-lower bounds (although there was a separte framework for kems built in 12/20).
+The initial goal of it was to survey lattice-based KEM design, for which there
+are broadly two distinct approaches
 
-The KEMs used in practice are direct sums of quite low dimensional lattices (say
-D_4, or even Z), which in my experience with quantized LWE behave rather poorly.
-It may be interesting to examine quantizing KEMs with lattices that do not have
-a ``low-dimensional direct sum'' structure.
+* "Reconciliation-based KEMs", which build IND-CPA-based KEMs directly (perhaps
+  the best-known example of this is the inital submission to CCS of the
+  ``NewHope'' scheme), and
+* "Encryption-based KEMs", which the initial LPR-type scheme is used, before
+  building a KEM with the FO-transform.
+
+I tried to write everything in terms of the [*Framework for Cryptographic
+Problems from Linear Algebra*](https://eprint.iacr.org/2019/282.pdf), while also
+discussing how one can highlight how KEM design is guided by the choice of a few
+(implicit) coding-theoretic choices.
+
+While both of thse are interesting research directions, in hindsight I think
+that the attempt at simultaneous generalization confused presentation of things.
+This harmed the presentation itself as well, which did not include nearly enough
+practical motivation (despite it existing --- my focus was just off).
+
+This is all to say there is much I would change, but this particular document will stay the way it is so I can share it with other UCSD students who are interested in what (not great but still passing) Research Exams look like.
