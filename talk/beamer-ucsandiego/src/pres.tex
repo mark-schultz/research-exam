@@ -1,0 +1,486 @@
+\documentclass{beamer}
+\usetheme{ucsandiego} 
+
+\usepackage{color} 
+\usepackage{graphicx} % external images
+\usepackage[font=small]{caption} % caption numbers
+\usepackage{tikz}
+\usepackage[backend=biber,style=alphabetic]{biblatex}
+\addbibresource{abbrev0.bib}
+\addbibresource{crypto_crossref.bib}
+\addbibresource{custom.bib}
+
+
+\newcommand{\pk}{\mathsf{pk}}
+\newcommand{\sk}{\mathsf{sk}}
+
+\newcommand{\enc}{\mathsf{Enc}}
+\newcommand{\dec}{\mathsf{Dec}}
+\newcommand{\encaps}{\mathsf{Encaps}}
+\newcommand{\decaps}{\mathsf{Decaps}}
+
+\newcommand{\encode}{\mathsf{encode}}
+\newcommand{\decode}{\mathsf{decode}}
+
+\newcommand{\LWE}{\mathsf{LWE}}
+\newcommand{\mat}[1]{\mathbf{#1}}
+
+\newcommand{\hide}[1]{}
+ 
+\theoremstyle{definition}
+
+
+
+
+\title{The Design of Lattice-based Key-Encapsulation Mechanisms}
+\author{Mark Schultz} 
+\institute{University of California San Diego}
+\date{27 May 2021} % custom date
+
+% Comment this section out to disable table of contents at section begin.
+%\AtBeginSection[]
+%{
+%\begin{frame}
+%\frametitle{Contents}
+% This will display the table of contents and highlight the current section.
+%\tableofcontents[currentsection] 
+%\end{frame}
+%}
+
+
+\begin{document}
+
+{
+\usebackgroundtemplate{
+    \tikz[overlay,remember picture]
+    \node[opacity=0.05, at=(current page.south east),anchor=south east,inner sep=0pt] {
+        \includegraphics[height=\paperheight,width=\paperwidth]{imgs/trident-30-4x3-right-bot}};
+}
+\begin{frame} 
+\titlepage
+\end{frame}
+}
+
+% Use \pause
+% and \alert{text} to change text color
+
+\section{Overview and Background Definitions}
+
+\begin{frame}
+	\frametitle{What is Key Exchange?}
+	\begin{itemize}
+		\item Cryptography is divided into \alert{symmetric} and \alert{asymmetric} constructions
+		\begin{itemize}\pause
+			\item \alert{Symmetric}: The same key is used to encrypt and decrypt.\pause
+			\item \alert{Asymmetric}: Different keys are used to encrypt and decrypt.\pause
+\begin{itemize}
+	\item Can make the encryption key public.\pause
+\end{itemize}
+		\end{itemize}
+	\item Symmetric constructions are \emph{much} faster.\pause
+	\item \alert{Exchange} symmetric \alert{keys}, and then use symmetric primitives.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{The Syntax of Key Exchange}
+	\begin{itemize}
+		\item Two main paradigms:\pause
+		\begin{itemize}
+			\item from \alert{Public-Key Encryption} (PKE)\pause
+			\item from \alert{Key-Encapsulation Mechanisms} (KEM)\pause			
+		\end{itemize}
+	\item \alert{Both}: Key Generation algorithm that outputs $(\pk ,\sk)$.\pause
+	\item Encoding:\pause
+	\begin{itemize}
+		\item \alert{PKE}: $c\gets \enc(\pk, k)$\pause
+		\item \alert{KEM}: $(c, k)\gets \encaps(\pk)$\pause
+	\end{itemize}
+\item Decoding:\pause
+\begin{itemize}
+	\item \alert{PKE}: $k \gets \dec(\sk, c)$\pause
+	\item \alert{KEM}: $k\gets \decaps(\sk, c)$
+\end{itemize}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Properties of Key Exchange}
+	\begin{itemize}
+			\item \alert{Correctness}: The sender and reciever end up with the same key $k$.\pause 
+			\begin{itemize}
+				\item Lattice-based schemes not always correct, modeling this is non-trivial \cite{TCC:HofHovKil17}.\pause
+			\end{itemize}
+			\item (Passive) \alert{Security}: The transcript $(\pk, c)$ reveal no information about the key $k$\pause
+			\begin{itemize}
+				\item Standard definitions (IND-CPA security) in cryptography
+			\end{itemize}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Arithmetic of Lattice-based Cryptography}
+\begin{itemize}
+\item All constructions can be viewed as ``\alert{Linear Algebra} over $R$'' \cite{cryptofromlinalg}.\pause
+\begin{itemize}
+	\item $R\cong \mathbb{Z}_q[x] / (x^{2^k}+1)$ is a ``quotient of a polynomial ring''\pause
+\end{itemize}
+\item For $k = 0$ and $q$ prime, $R\cong\mathbb{F}_q$.\pause
+\item Will be rather lax with which results are proved for LWE vs RLWE\pause\ vs MLWE vs LWR vs RLWR vs MLWR
+\end{itemize}
+
+\end{frame}
+
+% 6 mins to get here
+
+\begin{frame}
+	\frametitle{Codes --- Removing and Introducing Noise}
+	\begin{itemize}
+	\item Need some abstract notion of \alert{small} elements.\pause
+	\begin{itemize}
+		\item In lattice-based cryptography, $\ell_p$-norm\pause ${}^*$\pause
+	\end{itemize}
+	\item Define a \alert{code} with \alert{fundamental domain} $\mathcal{E}$ as a pair of functions\pause
+	\begin{align*}
+	\encode: A \to B,\qquad \decode : B\to A
+	\end{align*}
+	that satisfies the properties\pause
+	\begin{itemize}
+		\item \alert{Error-Correction}: $\decode(\encode(m) + \mathcal{E}) = m$.\pause
+		\item \alert{Lossy Compression}: $\encode(\decode(x)) \in x + \mathcal{E}$.
+	\end{itemize}
+	\end{itemize}
+\end{frame}
+
+\section{Noisy Diffie-Hellman}
+\hide{
+\begin{frame}
+	\frametitle{Standard DH}
+		\begin{itemize}
+			\item $\langle g\rangle \subseteq G$ a cyclic sub-group,\pause
+			\item Two users with \alert{DH Shares} $(s, g^s), (t, g^t)$ can:\pause
+			\begin{enumerate}
+				\item Exchange $g^s$ and $g^t$
+				\pause
+				\item Compute $(g^s)^t = g^{st} = (g^t)^s$\pause
+			\end{enumerate}
+		\item Must be \emph{hard} to compute $g^{st}$ from  $(g^s, g^t)$.
+		\end{itemize}
+\end{frame}
+\begin{frame}
+	\frametitle{Exact Lattice-based DH}
+	\begin{itemize}
+		\item $\mat A\in R^{n\times n}$ a \emph{matrix},\pause
+		\item Two users with \alert{LWE Shares} $(\vec s, \mat A\vec s), (\vec r, \vec r^t\mat A)$\pause
+		\begin{enumerate}
+			\item Exchange $\mat A\vec s$ and $\vec r^t\mat A$
+			\pause
+			\item Compute $(\vec r\mat A)\vec s = \vec r^t\mat A\vec s = \vec r^t(\mat A\vec s)$\pause
+		\end{enumerate}
+		\item Must be \emph{hard} to compute $\vec r^t\mat A\vec s$ from  $(\vec r^t\mat A, \mat A\vec s)$.\pause
+		\begin{itemize}
+			\item Can base this on the \alert{hardness} of computing $(\mat A, \mat A \vec s)\mapsto \vec s$.
+		\end{itemize}\pause 
+		\item \alert{Insecure}: can recover $\vec s$ via Gaussian elimination.
+	\end{itemize}
+\end{frame}
+}
+\begin{frame}
+	\frametitle{Noisy Lattice-based DH}
+\begin{itemize}
+	\item $\mat A\in R^{n\times n}$ a \emph{matrix},\pause
+	\item Two users with \alert{LWE Shares} $(\vec s, \mat A\vec s + \vec e_s), (\vec r, \vec r^t\mat A + \vec e_r)$, \pause where $\vec e_s, \vec e_r\gets \chi^n$ are \alert{small}.\pause
+	\begin{enumerate}
+		\item Exchange $\mat A\vec s + \vec e_s$ and $\vec r^t\mat A + \vec e_r$
+		\pause
+		\item Compute $(\vec r^t\mat A + \vec e_r)\vec s \approx \vec r^t\mat A\vec s \approx \vec r(\mat A\vec s + \vec e_s)$\pause
+		\item Difference $\langle\vec e_r,\vec s\rangle - \langle \vec r, \vec e_s\rangle$ should be \alert{small}.\pause
+	\end{enumerate}
+	\item Must be \emph{hard} to compute $\vec r^t\mat A\vec s$ from  $(\vec r^t\mat A + \vec e_r, \mat A\vec s + \vec e_s)$.\pause
+	\item \alert{Secure}, but only \emph{noisy} key agreement.
+\end{itemize}
+\end{frame}
+\hide{
+\begin{frame}
+	\frametitle{Noisy Lattice-based (In terms of $\LWE_{\vec s}(\mat A)$)}
+	\begin{itemize}
+		\item $\mat A\in R^{n\times n}$ a \emph{matrix},
+		\item Two users with \alert{LWE Shares} $(\vec s, \LWE_{\vec s}(\mat A)), (\vec r, \LWE_{\vec r}(\mat A^t))$, where $\vec e_s, \vec e_r$ are \alert{implicit} and \alert{small}.
+		\begin{enumerate}
+			\item Exchange $\LWE_{\vec s}(\mat A), \LWE_{\vec r}(\mat A^t)$
+			
+			\item Compute $\LWE_{\vec r}(\mat A^t)^t \vec s \approx \vec r\mat A\vec s \approx \vec r\LWE_{\vec s}(\mat A)$
+			\item Difference is \alert{small}.
+		\end{enumerate}
+		\item Must be \emph{hard} to compute $\vec r^t\mat A\vec s$ from  $(\LWE_{\vec r}(\mat A^t), \LWE_{\vec s}(\mat A))$.
+		\begin{itemize}
+			\item Can base this on the \alert{hardness} of computing $(\mat A, \LWE_{\vec s}(\mat A))\mapsto \vec s$, e.g. the search LWE problem.
+		\end{itemize}
+		\item \alert{Secure}, but only \emph{noisy} key agreement.
+			\item To hopefully simplify things, introduce the notation
+		\begin{equation*}
+		\LWE_{\vec s}(\mat A) = \mat A\vec s + \vec e_s
+		\end{equation*}
+		\item $\vec e_s$ implicitly sampled from a distribution over small elements.
+	\end{itemize}
+\end{frame}}
+
+%10 ish mins
+
+\begin{frame}
+	\frametitle{Key Exchange Construction}
+	\begin{itemize}
+		\item Two main paradigms \cite{EC:LyuPeiReg10, EPRINT:JinZha17}, both have the same \alert{core}.\pause
+		\begin{itemize}
+			\item In this presentation, everything but $\enc(\cdot, \cdot)$ and $\encaps(\cdot,\cdot)$ are \alert{identical}.\pause
+		\end{itemize}
+		\item Both parametrized by the choice of \alert{code} $(\encode, \decode)$.\pause
+\begin{center}
+	\begin{minipage}{.33\linewidth}
+		\textbf{KeyGen}$(1^n)$ \\
+		$\mat A\gets R^{n\times n}$\\
+		$\sk \gets R^n$\\
+		$\vec e_{\sk}\gets \chi^n$\\
+		$\pk \gets (\mat A, \mat A\sk + \vec e_{\sk})$\\
+		$\mathsf{return}\ (\pk, \sk)$
+	\end{minipage}\pause\begin{minipage}{.33\linewidth}
+	$\textbf{E}(\pk)$\\
+	$(\mat A, \vec b) = \pk$\\
+	$\vec r\gets R^n$\\
+	$\vec e_r \gets \chi^n$\\
+	$\vec u \gets \vec r\mat A + \vec e_r$\\
+	$e\gets \chi$\\
+	$v \gets \vec r^t\vec b + e$\\
+	return $(\vec u, v)$
+\end{minipage}\pause\begin{minipage}{.33\linewidth}
+$\textbf{D}(\sk, (\vec u, h))$\\
+$\decode(\vec u^t\vec \sk - h)$\\
+\vspace{1cm}
+\end{minipage}\pause
+\end{center}
+\item $h$ is a \alert{hint}, that differs in the \alert{PKE} and \alert{KEM} constructions.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{PKE Construction \cite{EC:LyuPeiReg10}}
+	\begin{itemize}
+		\item \alert{PKE}: The \alert{hint} $h$ is constructed as:\pause \\
+		$\enc(\pk, k)$\\
+		$(\vec u, v)\gets \textbf{E}(\pk)$\\
+		return $(\vec u, v - \encode(k))$\pause
+		\item \alert{Correctness}: $\vec u^t\sk - h\approx \vec r^t\mat A\vec s - v + \encode(k)\approx \encode(k)$.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Reconciliation Construction, \cite{EPRINT:Ding12,PQCRYPTO:Peikert14,USENIX:ADPS16,EPRINT:JinZha17}}
+	\begin{itemize}
+		\item \alert{PKE} was \alert{wasteful}.\pause
+		\begin{itemize}
+			\item It encodes a \alert{random} key under a code.\pause
+			\item Can we instead \alert{extract} a shared key from the key we \emph{approximately} agree on?\pause
+		\end{itemize}
+		\item For reconciliation, the \alert{hint} $h$ is constructed as:\pause \\
+		$\encaps(\pk)$\\
+		$(\vec u, v)\gets \textbf{E}(\pk)$\\
+		$h \gets v - \encode(\decode(v))$\\
+		$k \gets \decode(v)$\\
+		return $(\vec u, h)$\pause
+		\item The hint $h$ can be seen as ``centering'' $u^t\sk\approx \vec r^t\mat A\vec s$ in the fundamental domain of the code.
+	\end{itemize}
+\end{frame}
+
+% 18 mins
+
+\begin{frame}
+	\frametitle{Key Differences}
+	\begin{itemize}
+		\item Very similar constructions, up to the computations of the hints.
+		\begin{equation*}
+		v\mapsto v - \encode(k),\qquad v\mapsto v - \encode(\decode(v))
+		\end{equation*}\pause
+		\item Two large differences:
+		\begin{itemize}
+			\item Can only ``choose'' which key to use in the \alert{PKE} scheme.\pause
+			\item The \alert{KEM} scheme has its hint contained in the code's fundamental domain, which can be quite small.\pause
+			\begin{itemize}
+				\item Under ideal circumstances $\{0,1\}^{2^k}\subseteq R \cong \mathbb{Z}_q^{2^k}$, e.g. a reduction in the size of the hint by $\log_2q\approx 10$ factor.
+			\end{itemize}
+		\end{itemize}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{FO Transform, \cite{C:FujOka99,TCC:HofHovKil17}}
+	\begin{itemize}
+		\item Transforms from \alert{passive} security to \alert{active} security\pause
+		\begin{itemize}
+			\item Active --- adversary can submit ciphertexts for decryption, and observe behavior\pause
+		\end{itemize}
+	\item \alert{Randomness} used in encryption is \alert{computed from the message} ($r = G(k)$ for a PRG $G$)\pause
+	\item Later ``checks'' this upon decryption by \alert{reencrypting}.\pause
+\item Some issues with \alert{incorrect} schemes, but can be resolved.\pause
+\item Unknown how to apply to \alert{KEM}s, and therefore reconciliation-based schemes.
+	\end{itemize}
+\end{frame}
+
+% 18ish mins
+
+\section{Generic Optimizations}
+
+\begin{frame}
+	\frametitle{Compression of $\mathbf{A}$}
+	\begin{itemize}
+		\item Can send a short $n$-bit seed rather than an $2^kn^2\log_2 q$-bit matrix.\pause
+		\begin{itemize}
+			\item Some theoretical applications, needed for \alert{tight rate bounds}.
+		\end{itemize}
+	\end{itemize}
+\end{frame}
+\begin{frame}
+	\frametitle{Compression of $\mat A\vec s + \vec e_s$?}
+	\begin{itemize}
+		\item Can't just send a short seed.\pause 
+		\item Practically \cite{KYBER-spec,AFRICACRYPT:DKRV18}, people \alert{round off} the lowest coefficients, which are mostly noise.\pause
+		\begin{itemize}
+			\item Can be viewed as \alert{lossy compression} via a particular code.\pause
+			\item Can use other codes \cite{TCC:BDGM19}.\pause
+			\begin{itemize}
+				\item Using other codes is \alert{provably better}.\pause
+			\end{itemize}
+			\item \cite{KYBER-spec} even argues the additional rounding error has \alert{security benefits}.
+		\end{itemize}
+	\end{itemize}
+\end{frame}
+
+% 18ish mins
+
+\begin{frame}
+	\frametitle{Speeding up NTTs \cite{NTTmult}}
+	\begin{itemize}
+		\item For $R = \mathbb{Z}_q[x] / (x^{2^k}+1)$, \alert{optimal multiplication} requires $q$ to have \alert{special structure}.\pause
+		\begin{itemize}
+			\item View $R \subseteq [-q/2, q/2)^{2^k}\subseteq \mathbb{Z}[x]$\pause
+			\item Bound the size of the coefficients of the product of $f(x), g(x)$ from this set.\pause 
+			\item Find a $q'$ with \alert{special structure} that exceeds this bound, multiply in $\mathbb{Z}_{q'}[x]/(x^{2^k}+1)$.\pause
+		\end{itemize}
+	\item Works surprisingly well, $\approx 20\%$ speedup in Saber.\pause
+	\item Uses rather naive bounds --- can they be sharpened at all?
+	\end{itemize}
+	
+\end{frame}
+% 20: 30 ish
+\section{Reconciliation-based Papers}
+\begin{frame}
+	\frametitle{Wyner-Ziv Reconciliation \cite{EPRINT:SalLuzLin20}}
+	\begin{itemize}
+		\item Recall that the hint in the Reconciliation-based KEM was constructed as
+		\begin{equation*}
+		v\mapsto v - \encode(\decode(v))
+		\end{equation*}\pause
+		\item This construction first pre-processes $v$ by \alert{compressing} it with \alert{another code}.\pause
+		\begin{itemize}
+			\item (There are some other minor differences) \pause
+		\end{itemize}
+	\item For \alert{PKE} you can show that two codes are \alert{provably better} than one.\pause
+	\begin{itemize}
+		\item Show in the \alert{KEM} setting as well?
+	\end{itemize}
+	\end{itemize}
+\end{frame}
+\begin{frame}
+	\frametitle{(No) NIKE from LWE \cite{EPRINT:GKRS20}}
+	\begin{itemize}
+		\item Investigates the possibility of a ``hintless'' \alert{KEM}.\pause
+		\begin{itemize}
+			\item Could be used to remove the \alert{interaction} in LWE-based key exchange.\pause
+			\begin{itemize}
+				\item (One would have to publicly post $\mat A$)\pause
+			\end{itemize}
+		\end{itemize}
+		\item Reduces problem to \alert{post-processing} local view of $\vec r^t\mat A\vec r$.\pause
+		\begin{itemize}
+			\item And other variables that are \alert{locally} known.\pause
+			\item Gives \alert{strong bounds} against some restricted classes of functions.\pause
+			\item Shows that \emph{any} function would imply a \alert{weak-PRF}.\pause
+			\begin{itemize}
+				\item Only recently constructed (for parameters of interest) \cite{EC:Kim20}.
+			\end{itemize}
+		\end{itemize}
+	\end{itemize}
+\end{frame}
+
+\section{Encryption-based Papers}
+\begin{frame}
+	\frametitle{Binary Error-Correction}
+	\begin{itemize}
+		\item If the code $(\encode, \decode)$ is applied ``coordinate-wise'', failed decoding leads to a \alert{bit-flip} in the key $k$.\pause
+		\begin{itemize}
+			\item \alert{Pre-process} $k$ with a Binary error-correcting code?\pause
+		\end{itemize}
+	\item Works if bit-flips are \alert{independent}.\pause
+	\begin{itemize}
+		\item Shown \alert{asymptotically} \cite{EPRINT:JinZha17}.\pause
+	\end{itemize}
+\item Independence heuristic \alert{has issues} \cite{PQCRYPTO:DAnVerVer19}.\pause
+\begin{itemize}
+	\item Up to $2^{48}$ difference in failure probabillity estimations.
+\end{itemize}
+	\end{itemize}
+	
+\end{frame}
+\begin{frame}
+	\frametitle{Non-trivial Codes}
+	\begin{itemize}
+		\item Most codes used are fairly \alert{simple}:\pause
+		\begin{equation*}
+		\encode(m) = (q/2)m \bmod q,\qquad \decode(x) = \lfloor (2/q)x\rceil\bmod 2
+		\end{equation*}\pause
+		\item Known in coding theory that \alert{high-dimensional} codes are preferrable.\pause
+		\begin{itemize}
+			\item Some benefits in crypto \cite{Leech, E8}.
+			\item Second code of \cite{TCC:BDGM19} is \alert{high-dimensional}.
+		\end{itemize}
+	\end{itemize}
+\end{frame}
+\begin{frame}
+	\frametitle{Reconciliation for Encryption?}
+	\begin{itemize}
+		\item (One view of) \alert{reconciliation} is that it compresses $h\in R \cong (\mathbb{Z}_q^{2^k})$ to $\{0,1\}^{2^k}$.\pause
+		\item The \alert{PKE} of \cite{TCC:BDGM19} compresses $h\in R\to \mathbb{Z}_q \times\{0,1\}^{2^k}$.\pause
+		\begin{itemize}
+			\item \alert{PKE} so FO-transform still works.\pause
+			\item How similar are \alert{PKE} and \alert{KEM} constructions overall?
+		\end{itemize}
+	\end{itemize}
+\end{frame}
+
+\section{Conclusion}
+
+{
+	\usebackgroundtemplate{
+		\tikz[overlay,remember picture]
+		\node[opacity=0.05, at=(current page.south east),anchor=south east,inner sep=0pt] {
+			\includegraphics[height=\paperheight,width=\paperwidth]{imgs/trident-30-4x3-right-bot}};
+	}
+	\begin{frame}
+	\begin{itemize}
+		\item Many exciting developments in lattice-based KEMs.\pause
+		\begin{itemize}
+			\item Especially with the use of \alert{non-trivial} codes.\pause
+		\end{itemize}
+	\item Potential for the \alert{unification} and \alert{clarification} of different techniques.\pause
+	\begin{itemize}
+		\item And different sub-fields \cite{cryptofromlinalg}.\pause
+	\end{itemize}
+	\item Thanks!!
+	\end{itemize}
+	\end{frame}
+}
+	\printbibliography
+
+
+
+\end{document}
+
