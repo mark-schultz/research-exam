@@ -1,4 +1,4 @@
-My Research Exam for my Masters at UCSD.
+My research rxam for my Masters at UCSD (our analogue of qualifying exams, see [this](https://cse.ucsd.edu/graduate/exams/phd-research-examination-overview)).
 
 The initial goal of it was to survey lattice-based KEM design, for which there
 are broadly two distinct approaches
@@ -19,9 +19,4 @@ Problems from Linear Algebra*](https://eprint.iacr.org/2019/282.pdf), while also
 discussing how one can highlight how KEM design is guided by the choice of a few
 (implicit) coding-theoretic choices.
 
-While both of thse are interesting research directions, in hindsight I think
-that the attempt at simultaneous generalization confused presentation of things.
-This harmed the presentation itself as well, which did not include nearly enough
-practical motivation (despite it existing --- my focus was just off).
-
-This is all to say there is much I would change, but this particular document will stay the way it is so I can share it with other UCSD students who are interested in what (not great but still passing) Research Exams look like.
+While I would change many things about the exam+talk, I am leaving all documents (roughly) in the same form that I submitted them, up to the comments that my committee asked me to incorporate.
