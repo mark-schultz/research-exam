@@ -1,0 +1,353 @@
+\subsection{Notation}
+We will use the notation $\scalarfont{s}$ for scalars, $\vfont{s}$ for vectors, $\mfont{S}$ for matrices, $\dfont{S}$ for distributions (and adversaries), and $\setfont{S}$ for sets.
+We use $\round{x}$ to denote the operation of rounding to the closest integer, extended component-wise when applied to vectors/matrices.
+\subsection{The Arithmetic of this Survey}
+Lattice-based cryptography often uses relatively complex mathematics to design practical schemes.
+For instance, one of the leading hardness assumptions within lattice-based cryptography is that of Module Learning with Errors over (power-of-two cyclotomics).
+This combines the study of:
+\begin{enumerate}
+	\item The polynomial ring $\Zset_q[x] / (x^{2^k}+1)$.
+	\item Modules over this ring, i.e. ``linear algebra'' with coefficients in the ring.
+\end{enumerate}
+While we could begin this survey with a careful introduction to these algebraic structures, we view this as somewhat counterproductive to our goal of highlighting the non-trivial encodings that have started appearing in the design of lattice-based KEMs.
+
+For this reason, we write our survey working with general $\Aset$-modules for some finite commutative ring $\Aset$.
+We describe all protocols in terms of vectors and matrices with coefficients in $\Aset$, and encourage less algebraically-inclined readers to fix the case of $\Aset = \setfont{F}_q$ for $q$ prime, where things reduce to literal linear algebra.
+We do not generically make this simplification as lattice-based KEMs over $\setfont{F}_q$ have quite large ciphertexts (see FrodoKEM640 in figure \ref{tab: sizes}), so it is important to our purpose of desigining high-rate lattice-based KEMs to be able to later specialize $\Aset$ to $\Zset_q[x] / (x^{2^k}+1)$ (or other similar structures).
+
+Note that this ``linear algebraic'' description allows us to omit specifing what a lattice is.
+Readers should view this as analogous to expositions of elliptic curve protocols that compartmentalize the mathematical treatment of elliptic curves, and solely use them as the source of a group with an assumed hard problem.
+
+\subsection{Small Elements in this Survey}\label{ssec: codes}
+
+
+The paper is fairly vague on how someone should measure ``smallness'' in the first place, so we first discuss some nuances in defining the notion, before providing a general definition.
+
+Typically coding theory studies \emph{codes}, meaning subsets $C\subseteq \setfont{F}_2^n$ (see \cite{SPLAG} chapter 3).
+There are two primary notions of ``small'' associated with codes of interest to us, namely
+\begin{itemize}
+	\item how far apart any $\vfont{c}_1, \vfont{c}_2\in C$ are from eachother (often called the \emph{minimum distance} of the code), which bounds the size of errors one can \emph{remove} from any noisy codeword $\vfont{c}+\vfont{e}\mapsto \vfont{c}$, and
+	\item how far any arbitrary $\vfont{x}\in \setfont{F}_2^n$ is from some codeword $\vfont{c}$ (often called the \emph{covering radius} of the code), which bounds the size of errors \emph{induced} when mapping some $\vfont{x}\in\setfont{F}_2^n$ to the nearest codeword.
+\end{itemize}
+In the above, ``size'' and ``nearest'' are measured in the Hamming metric.
+There is a similar story in Euclidean space, where one considers $C\subseteq \Rset^n$, and measures ``size'' and ``nearest'' in the $\ell_2$ metric\footnote{Note that translating results to other $\ell_p$ metrics is not that difficult, as for $p\geq 1$ all $\ell_p$ metrics are equivalent up scaling by some dimension-dependent factor.}.
+
+Given these similar stories, we present our survey in terms of codes in general metrics, with three caveats, namely that
+\begin{itemize}
+	\item as we want to use the codes to encode data, we do not solely define a set $C\subseteq \setfont{X}$ for some metric space $\setfont{X}$, but also encoding and decoding functions
+	\begin{equation*}
+	\encode : \setfont{M}\to C\subseteq \setfont{X},\qquad \decode:\setfont{X}\to \setfont{M}
+	\end{equation*}
+		
+	\item We require $C$ be linear, e.g. $\setfont{M}$ and $\setfont{X}$ to be some groups, where $\encode$ is a group homomorphism.
+	\item We want the metric $d$ on $\setfont{X}$ to respect the group structure on $\setfont{X}$, which is called being \emph{translation-invariant}, or concretely satisfying
+	\begin{equation*}
+	\forall a,b,c \in\setfont{X} : d(a+c, b+c) = d(a,b)
+	\end{equation*}
+\end{itemize}
+
+
+As it is too strict to require that $\decode$ is linear as well\footnote{If one has the simple correctness condition $\encode(\decode(m)) = m$ for all $m\in\setfont{M}$, by basic group theory this implies that $\setfont{M}\cong\setfont{X}$, and no non-trivial error correction or compression can occur.}, we instead we will require that it partitions $\setfont{X}$ into translations of some fixed set $\decode^{-1}(0)$.
+A compact way to write this (which for Euclidean space has recently appeared in \cite{prest-exact-sampling})
+is that the code must satisfy
+\begin{equation}\label{eq: partial-linear}
+\forall m\in \setfont{M}, \forall e\in\setfont{X} : \decode(\encode(m) + e) = m + \decode(e),
+\end{equation}
+so solely a ``partial'' linearity property.
+We next introduce the notion of an abstract linear code, which can be seen as a generalization of notions from lattice coding (see chapter 2 of \cite{zamir_nazer_kochman_bistritz_2014}) and standard (e.g. binary, with Hamming weight) coding.
+
+\begin{definition}
+	Let $\setfont{M}, \setfont{X}$ be abelian groups with a translation-invariant metric $d$ on $\setfont{X}$, and let $\encode : \setfont{M}\to\setfont{X}$ be a homomorphism, and $\decode : \setfont{X}\to\setfont{M}$ be a function that satisfies eq. \eqref{eq: partial-linear}.
+	We call the pair $C = (\encode, \decode)$ a \emph{linear code} with message space $\setfont{M}$ and ambient space $\setfont{X}$.
+	We define the subset $C.\domain = \{x\in\setfont{X} \mid \decode(x) = 0\} = \decode^{-1}(0)$ to be the fundamental domain of $\setfont{X}$.
+	
+	For any code $C$, we define the functions:
+	\begin{equation*}
+	\round{x}_C = \encode(\decode(x)),\qquad x\bmod C = x - \round{x}_C
+	\end{equation*}
+	which decompose any $x\in\setfont{X}$ uniquely into $\round{x}_C\in \encode(\setfont{M}) = C$, and $x\bmod C\in C.\domain$.
+\end{definition}
+
+From these definitions, it is straightforward to establish codes can be used for error-correction and compression.
+\begin{theorem}
+	Let $C = (\encode, \decode)$ be a linear code with message space $\setfont{M}$ and ambient space $\setfont{X}$.
+	Then $C$ is
+	\begin{enumerate}
+		\item \textbf{Error-Correcting}: $\forall m\in\setfont{M}, \forall e\in C.\domain : \decode(\encode(m) + e) = m $.
+		\item \textbf{Lossily Compressing}: $\forall x\in\setfont{X}$, $\round{x}_C$ approximates $x$ up to bounded error $x\bmod C$, while having a succinct representation via an element $\decode(\round{x}_C)\in\setfont{M}$.
+	\end{enumerate}	
+\end{theorem}
+
+Note that while $\decode$ fails to be injective in general, when restricted to $\encode(\setfont{M})$ $\decode$ is a bijection.
+There exist weakenings\footnote{For example, ``promise'' versions of codes that are only error-correcting for $e$ contained in the largest sphere inscribed within $C.\domain$, which are known as \emph{bounded distance decoding} algorithms.
+Some codes we suggest to investigate in sub-section \ref{ssec: non-trivial codes} only have efficient BDD algorithms, which are sufficient for the applications we suggest them for.} of this notion which are interesting in practice, but we do not have space to treat them.
+Throughout this survey, we will freely use that a linear code $C$ with message space $\setfont{M}$ can be applied component-wise to give a linear code $C^n$ with message space $\setfont{M}^n$, justifying discussing codes in the smallest dimension they occur within.
+
+We will frequently refer to the following code throughout this survey, which we call the \emph{scaling code}.
+\begin{example}[The Scaling Code]\label{ex: scaling}
+	Let $p\mid q$ (and often in particular $p = 2$), and for $m\in\Zset_p$ define:
+	\begin{equation*}
+	\encode(k) = (q/p)k,\qquad \decode(c) = \lfloor (p/q)c\rceil
+	\end{equation*}
+	This code can correct any error contained in $[-q/2p, q/2p)$.
+\end{example}
+This construction appeared in the first cryptosystem built under the Learning with Errors assumption \cite{STOC:Regev05}, and has been used widely thought the field since\footnote{The only setting one tends \emph{not} to use this encoding is for some constructions of Fully Homomorphic Encryption, e.g. relatively advanced applications.}.
+For the the first part of this survey (especially section \ref{sec: paradigms}) of this survey, the reader can freely replace $C = (\encode, \decode)$ with this specific code with little loss in conceptual understanding.
+
+\subsection{Cryptography}
+We collect a variety of standard definitions of asymmetric cryptographic primitives that will form the core of our survey.
+Note that there are a few other cryptographic primitives that will appear sporadically\footnote{In particular in sub-sections \ref{ssec: fo-transform} and \ref{ssec: randomness-compression}.} which we omit formal definitions of, as they are not conceptually important for the survey.
+
+We first describe the syntax and correctness properties of Public-Key Encryption (PKE) and Key-Encapsulation Mechanisms (KEMs), before later describing their security properties.
+We will need a slightly non-standard notion of correctness of PKE for a variant of the Fujisaki-Okamoto transform \cite{TCC:HofHovKil17} that we survey in sub-section \ref{ssec: fo-transform}.
+\begin{definition}[Public-Key Encryption (PKE)]\label{def: pke}
+	Fix $\setfont{M}, \setfont{PK}, \setfont{SK}, \setfont{CS}$ as a message space, public-key space, secret-key space, and ciphertext space.
+	A public-key encryption scheme (PKE) is a triple of algorithms:
+	\begin{equation*}
+	\kgen : \Nset\to \setfont{PK}\times \setfont{SK},\qquad \enc : \setfont{PK}\times\setfont{M}\to \setfont{CS},\qquad \dec : \setfont{SK}\times\setfont{CS}\to \setfont{M}
+	\end{equation*}
+	where $\kgen, \enc$ are randomized.
+	We call a PKE scheme $\delta$-correct for $\delta\in[0,1]$ if:
+	\begin{equation*}
+	\expectation_{(\pk, \sk)}[\max_{m\in\setfont{M}}\Pr[\dec_{\sk}(c) \neq m\mid c\sample \enc_{\pk}(m)]] \leq \delta
+	\end{equation*}
+\end{definition}
+
+
+\begin{definition}[Key Encapsulation Mechanism]
+	Fix $\setfont{DK}, \setfont{PK}, \setfont{SK}, \setfont{CS}$ as a derived-key space, public-key space, secret-key space, and ciphertext space.
+	A key-encapsulation mechanism (KEM) is a triple of algorithms:
+	\begin{equation*}
+	\kgen : \Nset\to \setfont{PK}\times \setfont{SK},\qquad \encaps : \setfont{PK}\to \setfont{DK}\times\setfont{CS},\qquad \decaps : \setfont{SK}\times\setfont{CS}\to \setfont{DK}
+	\end{equation*}
+	where $\kgen, \encaps$ are randomized.
+	The KEM $(\kgen, \encaps, \decaps)$ is \textbf{perfectly correct} if $\forall (\pk,\sk)\sample \kgen(\secparam)$, $\forall(dk, c)\sample \encaps(\pk)$
+	\begin{equation*}
+	dk = \decaps(\sk, c)
+	\end{equation*}
+\end{definition}
+Note that one can weaken the correctness notion for a KEM as well, for example to only produce shared keys with very high probability.
+KEMs that produce uniform keys are desirable (and some constructions we survey explicitly target this), but not required --- standard techniques can convert non-uniform shared keys to uniform with a mild amount of post-processing.
+
+Computational notions of security are defined through what are known as ``security games''.
+We detail some of the relevant ones for our purposes in figure \ref{fig: sec-games}, although delay further discussion until subsection \ref{ssec: fo-transform}, where we discuss the techniques that practitioners use to convert the passively-secure schemes (whether KEMs or PKE) that they construct into actively-secure KEMs.
+
+\begin{figure}[h]\label{fig: sec-games}
+	\begin{center}
+		\begin{minipage}{.45\linewidth}
+			\procedure{$\indcpa$ for Encryption}{\pk, \sk\sample \kgen(\secparam)\\
+			b\sample \{0,1\}\\
+		(m_0^*, m_1^*, st) \sample \adv_1(\pk)\\
+	c^*\sample\enc_{\pk}(m_b^*)\\
+b' \sample \adv_2(\pk, c^*, st)\\
+\pcreturn b' == b}
+		\end{minipage}\hfill \begin{minipage}{.45\linewidth}
+	\procedure{$\indcpa$ for KEM}{
+	\pk, \sk \sample \kgen(\secparam)\\
+	b\sample \{0,1\}\\
+(k^*, c^*)\sample \encaps(\pk)\\
+\pcif b == 1 \\
+\t k^* \sample \setfont{DK}\\
+b' \sample \adv(\pk, (c^*, k^*))\\
+\pcreturn b' == b}
+	\end{minipage}
+	\end{center}
+\caption{The standard passive security notions for PKE and KEMs.
+Active (adaptive) security notions additionally allow the adversaries access to oracles $\dec_{\sk}(\cdot)$ and $\decaps(\sk, \cdot)$ on inputs that are not equal to $c^*$.}
+\end{figure}
+
+\subsection{Learning with Errors}\label{ssec: LWE}
+We will present the construction of lattice-based primitives in terms of the \emph{LWE function}.
+Recall that $\setfont{A}$ is some finite ring, which the reader should intuitively set to be $\Zset_q$, but in practice (for efficiency purposes) is of the form $\Zset_q[x] / (x^{2^k}+1)$.
+\begin{definition}
+	Let $m,\ell\in\Nset$.
+	Let $\vfont{A}\in\Aset^{m\times \ell}, \vfont{m},\vfont{e}, \in\Aset^m, \vfont{s}\in\Aset^\ell$.
+	Define
+	\begin{equation*}
+	\LWE_{\vfont{s}}(\vfont{m};\mfont{A}, \vfont{e}) = \vfont{m} + \mfont{A}\vfont{s} + \vfont{e}
+	\end{equation*}
+	to be the \emph{LWE function}.
+\end{definition}
+The parameters $\mfont{A}, \mfont{s}, \mfont{e}$ will be randomly generated.
+$\mfont{A}$ will always be uniform over $\Aset^{m\times n}$, we refer to the distribution $\vfont{s}$ is sampled from via $\LWE.\secret$ (this will typically be some i.i.d. distribution over $\Aset^n$, such as uniform, or ``Gaussian-like'').
+
+
+There are two main ways to generate $\vfont{e}$:
+\begin{enumerate}
+	\item \emph{Random Errors}: $\vfont{e}$ is sampled with i.i.d. coordinates from some distribution on $\Aset$
+	\item \emph{Deterministic Errors}: For some linear code $C$ with ambient space $\Aset^m$, $\vfont{e}$ is set to be $\vfont{e} =-(\mfont{A}\vfont{s} + \vfont{m}\bmod C)$, i.e. one has:
+	\begin{align*}
+	\LWE_{\vfont{s}}(\vfont{m}; \mfont{A}, \vfont{e}) &= \mfont{A}\vfont{s} + \vfont{m}+\vfont{e} \\
+	&=\mfont{A}\vfont{s} + \vfont{m} - (\mfont{A}\vfont{s} + \vfont{m}\bmod C)\\
+	&\stackrel{1}{=} \round{\mfont{A}\vfont{s} + \vfont{m}}_C
+	\end{align*}
+	where 1 follows from the definition of the function $x\mapsto x\bmod C$.
+\end{enumerate}
+By far the most common setting of LWE with deterministic errors is when $\Aset\cong \Zset_{2^\ell}$ for some $\ell\in\Nset$, and for some $t\in \Nset$ such that $t< \ell$ the code $C$ is given by
+\begin{equation*}
+\encode(m) = (2^\ell / 2^t)m,\qquad \decode(x) = \round{(2^t/2^\ell)x},
+\end{equation*}
+e.g. is a scaling code, where one scales by $(q/p) = 2^\ell/2^t$.
+For such $C$, it is straightforward to verify that $\round{x}$ zeros out the $t$ lowest-order bits of $x\in\Zset_{2^\ell}\cong \{0,1\}^\ell$, so ``rounds'' the (noiseless) LWE sample $\mfont{A}\vfont{s}$.
+This motivates the common name for the hardness assumption, which is ``Learning With Rounding'' (LWR).
+
+We will accomodate both\footnote{Note that this syntax additionally allows for errors that are ``partially random and partially deterministic'', which we discuss in sub-section \ref{ssec: lwe-share-compression}.} techniques by stating that $\vfont{e}$ is sampled from a family of distributions that may depend on $(\vfont{m}; \mfont{A}, \vfont{s})$, i.e. $\vfont{e} \sample \LWE.\error(\vfont{m};\mfont{A}, \vfont{s})$.
+Note that $\LWE.\secret$ is instead ``just'' a fixed distribution.
+We furthermore view the parameter $\vfont{e}$ in a call to the $\LWE_{\vfont{s}}$ function as being optional --- if it is omitted, one first samples $\vfont{e}\sample \LWE.\error(\vfont{m}; \mfont{A}, \vfont{s})$, before determinstically computing $\LWE_{\vfont{s}}(\vfont{m}; \mfont{A}, \vfont{e})$.
+In this notation, we can state the (decisional) LWE problem as follows.
+\begin{definition}
+	Let $m, \ell\in\Nset$.
+	For $\mfont{A}\sample \Aset^{\ell\times m}$ and $\vfont{s}\sample \LWE.\secret$, the decisional LWE problem is to distinguish the distributions:
+	\begin{equation*}
+	(\mfont{A}, \LWE_{\vfont{s}}(0;\mfont{A}))\stackrel{?}{\approx}_c (\mfont{A}, \vfont{b})
+	\end{equation*}	
+	Where $\vfont{b}\sample \Aset^m$, and $\vfont{s}\sample\LWE.\secret$.
+\end{definition}
+
+The difficulty of this problem heavily depends on the choices of $\Aset, m, \ell$, $\LWE.\secret$, and $\LWE.\error$.
+We will not attempt to survey the hardness of the LWE problem (although direct the interested reader to \cite{albrecht2015concrete}), and will instead show that our constructions are secure conditioned on the underlying decisional LWE problem being hard.
+
+Throughout, while we let $\secpar$ be the security parameter, we will often write $\setfont{A}^m$ as the space arithmetic occurs within.
+Both $\setfont{A}$ and $m$ can implicitly depend on the security parameter.
+For simplicty, we do not make this explicit, and just mention that when $\setfont{A}\cong \Zset_q^\ell$ (as sets), the general rule of thumb\footnote{There are many caveats here, for example this is false if the error distribution is trivial.} is that the quantity $m\ell\log_2 q$ controls the hardness of the problem.
+See \cite{EPRINT:BraDot20a} for some results in this direction.
+
+\subsection{``Noisy'' Diffie-Hellman}
+All Diffie-Hellman type constructions rely on the following symmetry of group exponentiation.
+\begin{example}
+	Let $G$ be a group, and let $g\in G$.
+	Then for any $r, s\in\Zset$:
+	\begin{equation*}
+	(g^r)^s = g^{rs} = (g^s)^r
+	\end{equation*}
+\end{example}
+This leads to a simple key exchange scheme where (relative to some generator $g\in G$) users exchange elements $g^r, g^s$, and can agree on $g^{rs}$.
+We next describe what one might call \emph{approximate} key agreement.
+This is implicit in the literature on lattice-based KEMs, and has been made explicit elsewhere (for example in \cite{EPRINT:SzeReyPre18}, where a definition that fixes the Hamming metric is given).
+We reproduce the definition of \cite{EPRINT:SzeReyPre18} below without this fixed choice of metric.
+
+\begin{definition}
+	A noisy key agreement protocol between two parties $A$ and $B$ is a tuple $\Pi = (\pgen, \mathsf{AContr}, \mathsf{BContr}, \mathsf{AConv}, \mathsf{BConv})$ of five polynomial-time algorithms where the first three are probabilistic and the last two are deterministic.
+	The algorithms are associated with the spaces $\mathsf{ParSp}, \mathsf{ContrSp}, \mathsf{StateSp}, \setfont{M}$, and have type signatures as follows:
+	\begin{itemize}
+		\item $\pgen : \Nset\to \mathsf{ParSp}$
+		\item $\mathsf{AContr}, \mathsf{BContr} : \mathsf{ParSp} \to \mathsf{StateSp}\times \mathsf{ContrSp}$
+		\item $\mathsf{AConv}, \mathsf{BConv} : \mathsf{StateSp}\times\mathsf{ContrSp} \to \setfont{M}$
+	\end{itemize}
+	The algorithms are such that, with respect to tolerable noise subset $D\subseteq \setfont{M}$ and failure probability $\epsilon\in[0,1]$, one has that
+	\begin{equation*}
+	\Pr\left[S_A-S_B \in D\right]\geq 1-\epsilon
+	\end{equation*}
+	Where the probability is over
+	\begin{itemize}
+		\item $\pubp \sample \mathsf{Init}(\secparam)$
+		\item $\state_A, \sigma_A\sample \mathsf{AContr}(\pubp)$
+		\item $\state_B, \sigma_B\sample \mathsf{BContr}(\pubp)$
+		\item $S_A \gets \mathsf{AConv}(\state_A, \sigma_B)$
+		\item $S_B\gets \mathsf{BConv}(\state_B, \sigma_A)$
+	\end{itemize}
+\end{definition}
+
+We briefly discuss Diffie-Hellman key exchange in this framework.
+\begin{example}
+	Let $\pgen(\secparam)$ return $(g, G, t)$ where $G$ is a group, $g$ is an element of $G$, and $\abs{\langle g\rangle} = t$. Define
+	\begin{align*}
+	\mathsf{AContr}(g, G, t) &= (\state_A\sample \mathsf{Unif}([t]), g^{\state_A}),\\
+	\mathsf{BContr}(g, G, t) &= (\state_B\sample \mathsf{Unif}([t]), g^{\state_B})\\
+	\mathsf{AConv}(\state_A, \sigma_B = g^{\state_B}) &= \sigma_B^{\state_A} = g^{\state_A\times \state_B},\\
+	\mathsf{BConv}(\state_B, \sigma_A) &= \sigma_A^{\state_B} = g^{\state_A \times \state_B}
+	\end{align*}
+\end{example}
+
+One can see directly that this is a noisy key agreement protocol with tolerable noise subset $D = \{0\}$, where $0$ is the identity of the group.
+
+The work of \cite{EPRINT:SzeReyPre18} defines a range of hard problems for noisy key agreement with tolerable noise subset $D$, briefly summarized as
+\begin{itemize}
+	\item \textbf{State Recovery Problem}: given the public parmeters $\pubp$ and $\sigma_A$ (resp. $\sigma_B$), recover $\state_A$ (resp. $\state_B$), and
+	\item \textbf{Noisy Key Search}: given the public parameters $\pubp, \sigma_A, \sigma_B$, find $S$ such that $S-S_A \in D$ and $S- S_B\in D$.
+\end{itemize}
+In the case of Diffie-Hellman, these problems reduce to the discrete logarithm problem, and the computational Diffie-Hellman assumption.
+
+We next define the ``core'' noisy key agreement protocol underlying LWE-based key exchange.
+In what follows, we use the notation $\vfont{a}^t$ to denote the transpose of $\vfont{a}$ (and similarly for matrices $\mfont{A}$).
+
+\begin{figure}\label{fig: LWE-Approx-Exchange}
+	\begin{minipage}{.3\linewidth}
+		\procedure{
+			\pgen(\secparam)}{
+			\mfont{A}\sample \setfont{A}^{m\times m}\\
+			\pcreturn \mfont{A}
+		}
+	\end{minipage}\hfill
+	\begin{minipage}{.3\linewidth}
+		\procedure{
+			$\mathsf{AContr}(\mfont{A})$}{
+			\state_A\sample \LWE.\secret\\
+			\sigma_A\sample \LWE_{\state_A}(0; \mathsf{A})\\
+			\pcreturn (\state_A, \sigma_A)}	
+	\end{minipage}
+	\hfill
+		\begin{minipage}{.3\linewidth}
+		\procedure{
+			$\mathsf{BContr}(\mfont{A})$}{
+			\state_B\sample \LWE.\secret\\
+			\sigma_B\sample \LWE_{\state_B}(0; \mathsf{A}^t)\\
+			\pcreturn (\state_A, \sigma_A)}	
+	\end{minipage}
+	\begin{minipage}{.3\linewidth}
+		\procedure{
+			$\mathsf{AConv}(\state_A, \sigma_B)$}{
+			\pcreturn \sigma_B^t \state_A}
+	\end{minipage}\hfill
+	\begin{minipage}{.3\linewidth}
+	\procedure{
+		$\mathsf{BConv}(\state_B, \sigma_A)$}{
+		\pcreturn \state_B^t \sigma_A}
+	\end{minipage}
+	\caption{
+		The noisy key agreement underlying LWE-based KEMs.}
+\end{figure}
+
+One can obtain a relatively simple expression of the noise between the shares $S_A - S_B$ in the protocol of figure \ref{fig: LWE-Approx-Exchange} as follows.
+
+\begin{lemma}\label{lem: nka}
+	Fix $\setfont{A}, m$, $\LWE.\secret$, and $\LWE.\error$.
+	Then, the results $S_A, S_B$ of the noisy key agreement protocol of figure \ref{fig: LWE-Approx-Exchange} satisfy
+	\begin{equation*}
+	S_A - S_B = \vfont{e}_B^t \state_A - \state_B^t\vfont{e}_A
+	\end{equation*}
+	where
+	\begin{align*}
+	\state_A, \state_B&\sample \LWE.\secret,\\
+	\vfont{e}_A &\sample \LWE.\error(0; \mfont{A}, \state_A),\\
+	\vfont{e}_B &\sample \LWE.\error(0;\mfont{A}^t, \state_B).
+	\end{align*}
+\end{lemma}
+\begin{proof}
+	Recall that $\sigma_A = \mfont{A}\state_A + \vfont{e}_A$ for $\vfont{e}_A \sample \LWE.\error(0; \mfont{A}, \state_A)$, and similarly $\sigma_B = \mfont{A}^t \state_B+ \vfont{e}_B$ for $\vfont{e}_B\sample \LWE.\error(0; \mfont{A}^t, \state_B)$.
+	We therefore have that
+	\begin{align*}
+	S_A &= \sigma_B^t \state_A = (\vfont{e}_B^t + \state_B^t \mfont{A})\state_A,\\
+	S_B &= \state_B^t\sigma_A = \state_B^t(\mfont{A}\state_A + \vfont{e}_A)
+	\end{align*}
+	so their difference satisfies
+	\begin{equation*}
+	S_A - S_B = \vfont{e}_B^t\state_A- \state_B^t\vfont{e}_A
+	\end{equation*}
+\end{proof}
+
+One still needs to produce some set $D$ such that one can bound $\Pr[S_A - S_B\in D]\geq 1 - \epsilon$.
+This is typically done computationally --- while one can compute theoretical bounds, they suffer from the inner products $\vfont{e}_B^t\state_A$ falling outside of the standard class of ``sub-Gaussian'' random variables (which admit strong tail bounds known as \emph{Chernoff bounds}) into a weaker class.
+Note that this isn't a practical issue --- the computation of the pair $(D, \epsilon)$ can be done exactly via computing the explicit distribution of $S_A - S_B$, but it does mean that the standard theoretical bounds one may use are less tight than normal.
+
+This does mean that there is litte practical value in (currently known) theoretical bounds on $S_A - S_B$ though, so to save space we will not reproduce them.
+It suffices to state that ``reasonable'' parameters to expect are something like $\epsilon \ll 2^{-100}$, and $D$ of moderately large size --- say for $\setfont{A} = \Zset_q$ of the form $[-q/d, q/d]$ for small $d$.
+
+It is relatively simple to argue security of this construction relative to the problems defined in \cite{EPRINT:SzeReyPre18}, as
+\begin{itemize}
+	\item for the state recovery problems, one must recover $\state_A$ from $(\mfont{A}, \mfont{A}\state_A + \vfont{e})$, e.g. solve the LWE search problem.
+	\item For noisy key search, provided testing membership $S - S_A\in D$ is efficient\footnote{There are some subtleties in this being true generally, namely that a natural choice of $D$ is the domain of a linear code, so one can later correct the errors.
+	Then efficient membership testing in $D$ can be used to decode the code, which is not always efficient.
+	For the cases we examine this will not matter.}, any adversary against the other hard problem can be used to solve decisional LWE in a rather straightforward reduction.
+\end{itemize}
+We do not formally treat these issues as we will not use the generic transformations of \cite{EPRINT:SzeReyPre18} later.

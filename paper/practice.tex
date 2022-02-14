@@ -1,0 +1,62 @@
+\label{sec: practical}
+We next discuss several optimizations that theoretical frameworks (including the ones described in section \ref{sec: paradigms}) tend to omit.
+Several of these are theoretically mundane, but most lead to quite interesting theoretical questions investigating the validity of the optimizations.
+We use Kyber, Saber, and LAC as a source of the practical optimizations we discuss.
+
+\subsection{Compression of Randomness}\label{ssec: randomness-compression}
+We start with the most mundane observation --- one can generate the values $\mfont{A}, \vfont{s}$ pseudorandomly rather than randomly, for example using an Extendible Output Function to compute $\vfont{s}$ from a short seed.
+While (unlike the next section) we do not see this as motivation to study new problems in the hardness of lattice-based cryptography, this optimization is still quite important for theoretical analysis to give accurate bandwidth predictions --- $\vfont{A}\in \setfont{A}$ is often $\approx 1000\log_2 q$ bits large in practice, and $\log_2 q \geq 10$.
+If one replaces this with a $128$-bit seed, the initial estimate is off by roughly 2 orders of magnitude.
+
+\subsection{Compression of LWE Shares}\label{ssec: lwe-share-compression}
+A more theoretically interesting optimization is the compression of LWE shares $\sigma_A, \sigma_B$ from the noisy key agreement.
+One can interpret the reconciliation-based framework described in subsection \ref{ssec: wyner-ziv} as suggesting doing some form of this.
+This leads to a natural question --- is there a notion of compression of ciphertexts in encryption-based KEMs?
+Briefly examining Kyber and Saber's protocols show the answer is yes --- often the lower-order (noisy) bits of ciphertexts are zeroed out, which we mentioned in sub-section \ref{ssec: LWE} is equivalent to (lossily) compressing the ciphertexts with a particularly simple linear code.
+This leads to few natural questions:
+\begin{enumerate}
+	\item Can one use other (more effective) codes in this construction?
+	\item Does the induced compression error help security, and if so by how much?
+	\item Does the particular form of compression impact security, or solely the size of the induced errors?
+\end{enumerate}
+In sub-section \ref{ssec: enc-rec} we survey a recent paper \cite{TCC:BDGM19} which can be interpreted as affirmatively answering the first question\footnote{Using techniques that are quite similar to those of the initial reconciliation mechanism of \cite{EPRINT:Ding12}.}.
+The Kyber authors \cite{KYBER-spec} additionally give arguments (from a concrete perspective) for the second point, and other authors \cite{EC:Kim20} have started investigating it theoretically, but in both settings it would be interesting to see analysis with respect to other codes $C$.
+
+\hide{
+\subsection{Speeding-up NTT Multiplications}\label{ssec: NTT}
+The \emph{number theoretic transform} is an analogue of the Fourier transform for $\ring{k, q}^n$.
+Provided $q = 2^tp + 1$ is a ``NTT-friendly prime'', one can multiply polynomials in quasi-linear time, entirely analogous to FFT-based multiplication.
+There can be certain benefits\footnote{If $q = 2^t$, modular reduction is much simpler.
+Concretely the NIST PQC finalist Saber \cite{AFRICACRYPT:DKRV18} chooses $q = 2^{13}$.} to working with NTT-unfriendly moduli though --- if $q = 2^t$, modular reduction is exceedingly simple.
+Some recent work \cite{NTTmult} has suggested taking polynomials $f\in \ring{k, q}$, viewing their coefficients as being contained in $[-q/2, q/2)^{2^k}$, and then performing NTT multiplications in a ring $\ring{k, q'}$ where $q'$ is both:
+\begin{enumerate}
+	\item NTT-friendly
+	\item Large enough that one does not ``wrap around'' (concretely $q' > q^2 2^k / 4$)
+\end{enumerate}
+The surprising part of this simple idea is how well it works.
+The authors found that for Saber, the technique leads to a 20\% speedup in encapsulation overall\footnote{On ARM Cortex-M4's, the embedded device NIST has suggested as an efficiency target.}.
+
+An interesting research direction could be trying to reduce the size of the NTT-friendly prime $q'$.
+Write $\sum_{i = 0}^{2^{k}-1}c_ix^i = f(x)g(x)$.
+The above setting of $q'$ can be interpreted as a worst-case bound on $\abs{c_i}$, and is clearly tight in general.
+There are a number of settings where one may be able to get tighter bounds though, namely
+\begin{enumerate}
+	\item if one polynomial is \emph{a priori} known to have small coefficients,
+	\item or if the polynomials are random, where one expects some concentration in the sums defining $c_i$.
+\end{enumerate}
+Can these observations be used to bring down the size of $q'$ from $O(q^22^k)$ to $O(q2^k)$ (or even $O(q2^{k/2})$)?
+Switching to average case bounds would clearly decrease the $\delta$ such that the scheme is $\delta$-correct slightly, but for schemes where $\delta < 1$ already this may be of minor importance.
+Moreover, it is plausible that the two ``bad'' events (the NTT moduli $q'$ being too small, and the error falling outside of $C.\domain$) are positively correlated.
+This is closely related to the question of the (in)dependence of the random variables $c_i$, which we discuss in sub-section \ref{ssec: independence}.
+\subsection{(Not) Using Binary Error-Correction}\label{ssec: independence}
+Certain constructions of lattice-based KEMs (notably LAC and HILA5 \cite{SAC:Saarinen17}) attempt to increase the $\delta$ for which they are $\delta$-correct by using a binary error-correcting code $B$.
+LAC first encodes messages under $B$, before applying the standard LPR encryption-based formalism (which includes encoding the messages under a separate linear code $C$).
+Decoding failures for any particular coordinate $i$ of the linear code $C$ then translate to bit flips that $B$ can try to correct.
+
+Analyzing the correctness of this is closely related\footnote{We remind the reader the LWE errors that $C$ must correct are expressions of the form $e' + \vfont{e}_s^t\vfont{r} - \sk^t\vfont{e}_r$, all terms in this expression are defined in theorem \ref{thm: lpr-correct-secure}.
+This is to say a slightly different expression, but a similar independence question.} to the assumption of the independence of the coefficients of the polynomial $f(x)g(x)$ discussed in sub-section \ref{ssec: NTT} --- one could imagine dependence structures on the $e_i$ such that either all coefficients fall into $C.\domain$, or all fall out of it, rendering the binary error-correcting code useless.
+There are asymptotic results\footnote{These have a very similar flavor to ``central limit theorem'' type results on the asymptotic convergence of a random variable to some fixed distribution.} that show that this does not happen \cite{EPRINT:JinZha17}, but a recent work \cite{PQCRYPTO:DAnVerVer19} has shown experimentally that a mild amount of positive correlation does hold (in the non-asymptotic setting).
+They have suggested a new heuristic which they have experimentally confirmed, and analyzed parameter settings of practical schemes in terms of this new heuristic.
+For schemes that heavily relied on binary error-correction, the gap was large --- LAC's failure probability was $2^{48}$ times larger under the new heuristic.
+Theoretically establishing this new heuristic (in the non-asymptotic setting) would be quite interesting, and would likely be closely related to our discussion in sub-section \ref{ssec: NTT}.
+}

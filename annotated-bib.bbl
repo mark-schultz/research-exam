@@ -1,0 +1,80 @@
+\newcommand{\etalchar}[1]{$^{#1}$}
+\begin{thebibliography}{BDGM19}
+
+\bibitem[AAB{\etalchar{+}}]{alkim_algorithm_nodate}
+Erdem Alkim, Roberto Avanzi, Joppe Bos, Léo Ducas, Martin~R Albrecht,
+  Emmanuela Orsini, Valery Osheter, Kenneth~G Paterson, Guy Peer, and Nigel~P
+  Smart.
+\newblock Algorithm {Speciﬁcations} and {Supporting} {Documentation}.
+\newblock page~47.
+
+\bibitem[ADPS15]{alkim_post-quantum_2015}
+Erdem Alkim, Léo Ducas, Thomas Pöppelmann, and Peter Schwabe.
+\newblock Post-quantum key exchange - a new hope.
+\newblock Technical Report 1092, 2015.
+
+\bibitem[BCSV20]{bootland_framework_2020}
+Carl Bootland, Wouter Castryck, Alan Szepieniec, and Frederik Vercauteren.
+\newblock A framework for cryptographic problems from linear algebra.
+\newblock {\em Journal of Mathematical Cryptology}, 14(1):202--217, July 2020.
+
+\bibitem[BDGM19]{brakerski_leveraging_2019}
+Zvika Brakerski, Nico Döttling, Sanjam Garg, and Giulio Malavolta.
+\newblock Leveraging {Linear} {Decryption}: {Rate}-1 {Fully}-{Homomorphic}
+  {Encryption} and {Time}-{Lock} {Puzzles}.
+\newblock Technical Report 720, 2019.
+
+\bibitem[DVV19]{ding_impact_2019}
+Jan-Pieter D’Anvers, Frederik Vercauteren, and Ingrid Verbauwhede.
+\newblock The {Impact} of {Error} {Dependencies} on {Ring}/{Mod}-{LWE}/{LWR}
+  {Based} {Schemes}.
+\newblock In Jintai Ding and Rainer Steinwandt, editors, {\em Post-{Quantum}
+  {Cryptography}}, volume 11505, pages 103--115. Springer International
+  Publishing, Cham, 2019.
+\newblock Series Title: Lecture Notes in Computer Science.
+
+\bibitem[GH19]{hofheinz_compressible_2019}
+Craig Gentry and Shai Halevi.
+\newblock Compressible {FHE} with {Applications} to {PIR}.
+\newblock In Dennis Hofheinz and Alon Rosen, editors, {\em Theory of
+  {Cryptography}}, volume 11892, pages 438--464. Springer International
+  Publishing, Cham, 2019.
+\newblock Series Title: Lecture Notes in Computer Science.
+
+\bibitem[GKRS20]{guo_limits_2020}
+Siyao Guo, Pritish Kamath, Alon Rosen, and Katerina Sotiraki.
+\newblock Limits on the {Efficiency} of ({Ring}) {LWE} based
+  {Non}-{Interactive} {Key} {Exchange}.
+\newblock Technical Report 1555, 2020.
+
+\bibitem[GMP19]{ishai_building_2019}
+Nicholas Genise, Daniele Micciancio, and Yuriy Polyakov.
+\newblock Building an {Efficient} {Lattice} {Gadget} {Toolkit}: {Subgaussian}
+  {Sampling} and {More}.
+\newblock In Yuval Ishai and Vincent Rijmen, editors, {\em Advances in
+  {Cryptology} {EUROCRYPT} 2019}, volume 11477, pages 655--684. Springer
+  International Publishing, Cham, 2019.
+\newblock Series Title: Lecture Notes in Computer Science.
+
+\bibitem[PW]{peikert_lossy_nodate}
+Chris Peikert and Brent Waters.
+\newblock Lossy {Trapdoor} {Functions} and {Their} {Applications}.
+\newblock page~41.
+
+\bibitem[Reg]{regev_lattices_nodate}
+Oded Regev.
+\newblock On {Lattices}, {Learning} with {Errors}, {Random} {Linear} {Codes},
+  and {Cryptography}.
+\newblock page~37.
+
+\bibitem[SLCPL]{saliba_wyner-ziv_nodate}
+Charbel Saliba, Laura Luzzi, Universite Cergy-Pontoise, and Cong Ling.
+\newblock Wyner-{Ziv} reconciliation for key exchange based on {Ring}-{LWE}.
+\newblock page~8.
+
+\bibitem[vP]{van_poppelen_cryptographic_nodate}
+Alex van Poppelen.
+\newblock Cryptographic decoding of the {Leech} lattice.
+\newblock page~63.
+
+\end{thebibliography}

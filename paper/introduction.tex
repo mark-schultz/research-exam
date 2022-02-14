@@ -1,0 +1,87 @@
+Lattice-based cryptography has emerged as a leading candidate for both key-encapsulation mechanisms (KEMs) and digitial signature schemes that are secure against quantum-capable adversaries (known as ``post-quantum cryptography''). These primitives are of vital importance to Transport Layer Security (TLS), which is a backbone of the modern internet. 
+
+The American National Institute of Standards and Technology (NIST) is currently in the process of standardizing a post-quantum KEM and signature scheme in a competition (the NIST PQC competition).
+This has led to a great deal of academic interest in the design of practical lattice-based KEMs.
+We survey a selection of papers in the area, featuring a mixture of theoretical and practical works, with the goal of exploring future directions in the development of practical lattice-based KEMs.
+
+Throughout we will routinely refer to the cryptosystems Kyber \cite{KYBER-spec}, Saber \cite{AFRICACRYPT:DKRV18}, and LAC \cite{EPRINT:LLZJXHLW18}. The first two are the lattice-based KEMs that have been selected as finalists in NIST's PQC competition, while the later is a scheme that China has recently standardized\footnote{LAC was submitted to the NIST PQC competition as well, but did not advance past the second (out of three) round.} via an analogous competition as a post-quantum KEM.
+
+\subsection{Goals of this Survey}
+
+In this survey, we have two somewhat related goals, that in hindsight it may have been better to address separately.
+These are,
+\begin{itemize}
+	\item examining different non-trivial encodings used in the design of lattice-cryptographic protocols, with the goal of highlighting the rate benefits of these encodings, and
+	\item abstracting the notion of ``arithmetic'' and ``smallness'' one works with, with the intent of enabling future generalization of our lattice-cryptographic KEMs to coding-theoretic KEMs and ``Mersenne Prime''-based KEMs \cite{C:AJPS18}.
+\end{itemize}
+While these both benefit from parametrizing current lattice-based schemes by an explicit underlying choice of error-tolerant encoding, trying to combine the very abstract with the very concrete perhaps has led to sub-optimal results, and it is likely too late to excise one of these topics from the survey.
+For this reason, we keep both of them, and the tension between ``very abstract'' and ``very concrete'', in the body of the survey, but motivate their study separately in the introduction.
+
+\subsubsection{Steps towards Uniformly covering Lattice, Code, and Mersenne Prime-based Cryptography}
+A paper \cite{cryptofromlinalg} we survey in sub-section \ref{ssec: crypt-from-lin-alg} argues that if one appropriately abstracts both the space one does arithmetic in and the notion of ``small'' one works with, one can uniformly describe the hardness assumptions of
+\begin{itemize}
+	\item lattice-based cryptography, for example the LWE assumption, as well as
+	\item (parts of)\footnote{There exist other areas of coding-based cryptography, namely ``Rank Metric'' codes, for which this is non-obvious but plausible.} coding-based cryptography, for example the Learning Parity with Noise assumption, and
+	\item ``Mersenne prime''-based cryptography \cite{C:AJPS18}, specifically the I-RLWE assumption of \cite{EPRINT:Chunsheng17b}.
+\end{itemize}
+Historically this is not the most surprising --- the LWE assumption was compared to the LPN assumption when it was introduced, and ``Mersenne Prime''-based cryptography was specifically introduced as a non-standard variant\footnote{Specifically, the intention is to perform arithmetic $\sum_i a_ib^i \bmod f(b)$ rather than $\sum_i a_i x^i \bmod f(x)$, e.g. ``big integer'' arithmetic rather than polynomial arithmetic.
+The intention of this is to be able to reuse RSA coprocessors.} of lattice-based cryptography (and furthermore, can explicitly reduce its security to standard problems in lattice-based cryptography).
+
+Despite the broad similarities at a heuristic level, work in each area often can often stay separate from the other areas.
+The LLL basis reduction algorithm \cite{LLL} was first published in 1982, while the first analogue of a basis reduction algorithm for codes came out a few months ago \cite{AlgoRedCodes}, nearly 40 years later.
+Other examples exist, namely worst-case to average-case reductions for LPN first appeared in \cite{EPRINT:BLVW18}, over 10 years after Regev's reduction for LWE \cite{STOC:Regev05}, and over 20 years after Ajtai's first worst-case to average-case reduction for lattice problems \cite{STOC:Ajtai96}.
+
+We see this state of affairs as somewhat regrettable, and describe our (lattice-based) constructions in a more general language to prepare future work where we uniformly describe \emph{protocols} in all three areas in a uniform language.
+It is plausible this can be done in a way that has mild benefits purely for lattice-based cryptography, even when considered in isolation.
+Specifically, the modularization of constructions that this would require could reduce the number of parameters that one has to consider at a time in lattice-cryptographic protocols\footnote{Currently, constructions are often parametrized by integers $n, m, q$, probability distributions $\chi_e, \chi_s$ on $\Zset_q$, and an irreducible polynomial$f(x)\in\Zset_q[x]$.}, which would be somewhat nice.
+
+\subsubsection{Smaller Lattice-based Ciphertexts from Non-trivial Encodings}
+
+As mentioned, our two topics are unfortunately only somewhat related.
+On the more practical side of things, we focus on the \emph{size} of both public keys and ciphertexts in lattice-based KEMs.
+This is a metric that lattice-based cryptography performs poorly on compared to the elliptic curve-based state of the art (see explicit numbers in figure \ref{tab: sizes}).
+While the impact of the order of magnitude performance degredation is application dependent, we see it as a particular pain point in the switch to post-quantum secure cryptosystems, so focus on it as an area that needs improvement.
+
+\begin{figure}
+	\begin{center}
+		\begin{tabular}{|c|c|c|c|c|}\hline
+			Scheme & Public Key Size & Ciphertext Size & Shared-key Size& PQ-Secure? \\\hline
+			ECDH (256-bit field) & 64& 64&128& No\\
+			FrodoKEM-640 \cite{CCS:BCDMNN16} & 9,616& 9,720&128& Yes!\\
+			NewHope512 \cite{USENIX:ADPS16} & 928 &1088&128& Yes\\
+			AKCN-E8-512 \cite{E8}&928&960&256& Yes
+			\\\hline
+		\end{tabular}
+		\caption{Sizes (in bytes) for a variety of IND-CPA-secure KEMs that are thought to achieve 128-bit security.
+			The large sizes of FrodoKEM (compared to the other lattice-based schemes) are due to it relying on a more conservative hardness assumption (``unstructured'' LWE vs. ``structured'' LWE).}\label{tab: sizes}
+	\end{center}	
+\end{figure}
+
+
+To this end, we see two main paths forward that are relatively unexplored.
+Simplistically, lattice-based KEMs often implicitly depend on an underlying choice of an
+\begin{itemize}
+	\item error-tolerant encoding, and a
+	\item lossy compression mechanism.
+\end{itemize}
+Current schemes often set these to be roughly trivial.
+For example, to encode $n$ dimensional vectors $\vfont{x}\in\Zset_q^n$, one often simply scales up (for error-correction properties) or scales down and rounds (for compression properties) each coordinate independently.
+Note that the extent to which current schemes do both of the above is even limited --- while the aforementioned lossy compression mechanism is practically very common, many theorists do not even bother mentioning it when discussing constructions.
+
+We see possibilities to improve on the practical size of lattice-based KEMs via both techniques.
+While we survey them both in section \ref{sec: new-theory-constructions}, we mention two highlights here, namely that
+
+\begin{itemize}
+	\item the scheme AKCN-E8-512 has mildly smaller ciphertexts than NewHope512 (both displayed in fig. \ref{tab: sizes}), at roughly the same computational cost, while \emph{doubling} the size of the shared key one agrees to, and
+	\item the non-trivial ciphertext compression scheme of \cite{TCC:BDGM19} can compress a ciphertext $(\vfont{u}, \vfont{v})\in\Zset_q^n\times \Zset_q^n$ to $\Zset_q^n\times \Zset_q \times \{0,1\}^n$.
+\end{itemize}
+
+The compression scheme in the second example can be computed via a surprisingly simple algorithm --- it is easily quasi-linear time\footnote{There even exist linear time algorithms that replace a sorting algorithm call (the source of the quasi-linear complexity) to a somewhat non-standard variant of sorting that executes in $O(n)$ time, although it is not clear if this is useful for non-asymptotic settings.}, and should have ``good constants'', although we have not practically implemented it yet.
+Still, it seems plausible one could reduce ciphertexts by a few hundred bytes at some mild (or even no) overhead compared to the state of the art.
+Of course, when designing practical schemes there are many other things to evaluate.
+It seems quite possible more complicated encodings could negatively impact the
+\begin{itemize}
+\item ease of implementing countermeasures against side-channel attacks, or the
+\item ease of (correct) implementation
+\end{itemize}
+While it is plausible points such of these may make the potential rate gains not worth it, we find that rate gains seem to be ``left on the table'' currently to be a compelling reason to highlight a plausible avenue to achieving them in our survey on lattice-based KEMs, with the intent of evaluating their efficacy practically in the future.

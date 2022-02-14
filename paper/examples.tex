@@ -1,0 +1,21 @@
+\label{sec: new-theory-constructions}
+Having used Kyber, Saber, and LAC as running examples of practical (encryption-based) KEMs throughout the survey, we briefly describe some interesting constructions which we find to be quite compelling, and evidence in favor of our choice to parametrize constructions with respect to the underlying linear code, rather than simply fix the scaling code everywhere.
+
+
+\subsection{Practically Evaluating Non-trivial Codes}\label{ssec: non-trivial codes}
+A few years ago a paper \cite{Leech} tried to apply the ``Leech Lattice'' to the construction of lattice-based PKE.
+This led to some mild bandwidth savings (roughly 17\% for PKE, 10\% for a KEM, but 18\% if the KEM only has to transmit 240-bit keys\footnote{This is because the Leech Lattice is a 24-dimensional object, and $24\mid 240$ leads to a more efficient construction.}), but is limited in many ways --- it was only defined over $\Zset_q^n$, and changing it into a construction over $\Zset_q[x] / (x^{2^k}+1)^n$ may be difficult\footnote{24 is not a power of two, so to maximize efficiency one would have to work with quotients of the form $\Zset_q[x] / (f(x))$ for more general $f(x)$, which is a less popular setting among protocol designers.}.
+
+This has motivated other authors to examine other non-trivial lattice codes, for example the $E_8$ lattice \cite{E8}, which as we mentioned in the introduction is able to get smaller ciphertexts that transmit longer keys at roughly the same computational cost.
+While there is not a clear usecase for these longer keys, the fact that this highly performant (on the particular metric of key sizes) encoding exists leads to the natural question if other performant encodings exist on other (more useful) metrics, such as the size of the resulting ciphertexts.
+
+This design strategy still fundamentally takes some finite (specifically 8)-dimensional code, and applies it coordinate-wise.
+It could be interesting to evaluate truly high-dimensional lattices codes for this purpose, i.e. codes built from a discrete logarithm lattice \cite{Dloglattice} or a Barnes Sloane lattice \cite{BarnesSloane}.
+It is known that (measured via certain coding-theoretic parameters) these are asymptotically better than using the $E_8$ lattice coordinate-wise, so evaluating whether this is true for parameters of interest is an interesting open question.
+\subsection{Using Reconciliation Techniques for Encryption}\label{ssec: enc-rec}
+Again, we previously mentioned in the introduction that recent work \cite{TCC:BDGM19} on lattice-based Fully Homomorphic Encryption has suggested using the standard scaling code for encryption, but additionally defining a certain ``hint vector'' that one computes, allowing one to compress an element of $\Zset_q^n$ to an element of $\Zset_q\times \{0,1\}^n$.
+One can interpret this as a version of Ding's \cite{EPRINT:Ding12} initial reconciliation mechanism for encryption-based KEMs.
+As it natively works for encryption-based KEMs, one can apply the FO transform to it at to directly achieve \indcca\ security using reconciliation-like techniques.
+
+The authors of \cite{TCC:BDGM19} do not address this possibility.
+As we mention in the introduction, we believe this to be one of the most practical research directions originating from our survey, as it should be rather simple to evaluate the efficacy of the ciphertext compression of \cite{TCC:BDGM19}, and every (theoretical) metric we have checked it on so far is fairly compelling.

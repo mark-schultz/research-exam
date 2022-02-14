@@ -1,0 +1,99 @@
+We first show the following equivalence between the tail-bounds that define sub-Weibull random variables, and a uniform bound on the moments of the random variable.
+This is derived in \cite{sub-weibull} up to universal constants that are not explicitly specified.
+We copy their derivation below, and track the explicit constants.
+For full justification of the computations (and broader context for sub-Weibull distributions), see \cite{sub-weibull}.
+
+\begin{lemma}
+	For a random variable $X$, let $\norm{X}_k = \expectation[\abs{X}^k]^{1/k}$.
+	Let $X$ be sub-Weibull of tail parameter $\theta$ and scale parameter $\sigma$.
+	Then:
+	\begin{equation*}
+	\norm{X}_k \leq C_{\theta} k^{\theta},\qquad \forall k\geq 1
+	\end{equation*}
+	Where $C_{1/2} \leq 0.624$ and $C_1 \leq 0.374$.
+	Conversely, if $\norm{X}_k\leq Ck^\theta$ for all $k\geq 1$, then assuming $\theta \leq 1$: 
+	\begin{equation*}
+	\Pr[\abs{X}\geq x] \leq 2\exp\pqty{-\frac{\theta \ln 2}{2e}\pqty{x/C}^{1/\theta}}
+	\end{equation*}
+	In particular:
+	\begin{enumerate}
+		\item If $\theta = 1/2$, $X$ is sub-Weibull of tail parameter $\theta$ and scale parameter $\frac{8e^2}{\ln 2}C \leq 86C$
+		\item If $\theta = 1$, $X$ is sub-Weibull of tail parameter $\theta$ and scale parameter $2eC / \ln 2 \leq 8C$
+	\end{enumerate}
+\end{lemma}
+We quickly mention that the constants $C_\theta\exp(-\theta)$ grow rather rapidly as $\theta$ grows --- for $\theta = 10$ this quantity is already over 4 million.
+For this reason we focus on the special cases of $\theta\in\{1/2, 1\}$ that are of interest to our work, and still quite small in practice.
+\begin{proof}
+Let $X$ be sub-Weibull of tail parameter $\theta$ and variance proxy $\sigma$.
+Then, we have that:
+\begin{align*}
+\expectation[\abs{X}^k] &= \int_0^\infty \Pr[\abs{X}^k > x]\mathsf{d}x = \int_0^\infty \Pr[\abs{X}>x^{1/k}]\mathsf{d}x\\
+&\leq \int_0^\infty 2\exp(-(x/\sigma)^{1/(k\theta)})\mathsf{d}x = 2\sigma k\theta\int_0^\infty e^{-u}u^{k\theta-1}\mathsf{d}u=2\sigma k\theta\Gamma(k\theta+1)
+\end{align*}
+An explicit form of Stirling's approximation for $\Gamma(x)$ \cite{simple-gamma} gives that:
+\begin{equation*}
+\frac{1}{\sqrt{2\pi}}x^{x-(1/2)}\exp(-x)\leq\Gamma(x) \leq \frac{1}{\sqrt{2\pi}}x^{x-(1/2)}\exp(-x)\exp(1 / (12x))
+\end{equation*}
+It follows that:
+\begin{align*}
+\Gamma(k\theta + 1) &\leq \frac{1}{\sqrt{2\pi}}(1+k\theta)^{k\theta + 1/2}\exp\pqty{\frac{1}{12(1+k\theta)}}\exp(-(1+k\theta))\\
+&= \frac{\exp\pqty{\frac{1}{12(1+k\theta)}}\sqrt{1+k\theta}}{\sqrt{2\pi}\exp(1+k\theta)}(1+k\theta)^{k\theta}\\
+&=\frac{\exp\pqty{\frac{1}{12(1+k\theta)}}\sqrt{1+k\theta}}{\sqrt{2\pi}\exp(1 + k\theta)}(k^{-1}+\theta)^{k\theta}k^{k\theta}
+\end{align*}
+It follows that:
+\begin{align*}
+\norm{X}_k & \leq \sqrt[k]{2\sigma k\theta\Gamma(k\theta+1)}\\
+&\leq \underbrace{\sqrt[k]{2k\theta \frac{\exp\pqty{\frac{1}{12(1+k\theta)}}\sqrt{1+k\theta}}{\sqrt{2\pi}e}(k^{-1}+\theta)^{k\theta}}}_{C_{k,\theta}}\exp(-\theta)\sqrt[k]{\sigma}k^\theta
+\end{align*}
+We upper bound $C_\theta = \exp(-\theta)\max_{k\geq 1} C_{k, \theta}$ for $\theta\in\{1/2, 1\}$ via computer calculation, which we display the results of in table \ref{tab: consts}.
+\begin{table}[h]\label{tab: consts}
+	\begin{center}
+	\begin{tabular}{|c|c|}\hline
+		$\theta$ & $\exp(-\theta) \max_{k}C_{k,\theta}$\\\hline
+		0.5 & 0.624\\
+		1.0 & 0.374\\
+		1.5 & 0.296\\
+		2.0 & 0.566\\
+		2.5 & 1.141\\
+		3.0 & 2.418\\
+		3.5 & 5.378\\
+		4.0 & 12.517\\
+		4.5 & 30.392\\
+		5.0 & 76.754\\\hline
+	\end{tabular}
+\end{center}
+\caption{The values of the constant $C_\theta = \exp(-\theta)\max_{k\geq 1}C_{k,\theta}$ for selected values of $\theta$.
+	The values were computed by maximizing $C_{k,\theta}$ over the first million values of $k$.}
+\end{table}
+
+The reverse direction can be done without additional computations for the case that $\theta\leq 1$ (for larger $\theta$, one must compute a separate term that we omit).
+In the language of \cite{sub-weibull}, we have that:
+\begin{align*}
+K_1 &= K_4 = \frac{K_3}{(\ln 2)^\theta} = \pqty{\frac{2e}{\theta \ln 2}}^\theta K_2
+\end{align*}
+where $K_1$ is the scale parameter, and $K_2$ is the constant in the bound on the moments.
+\end{proof}
+
+
+We will need concentration bounds for the product of two sub-Weibulls of parameter $\theta = 1/2$, and the sum of two sub-Weibulls of parameter $\theta = 1$.
+\begin{lemma}\todo{Get lemma number to match up with previous lemma number}
+	Let $X, Y$ be independent sub-Weibull random variables of tail parameters $\theta_x, \theta_y$ and scale parameters $\sigma_x, \sigma_y$, and let $c\in\mathbb{R}$.
+	Then:
+	\begin{enumerate}
+		\item $cX$ is sub-Weibull of tail parameter $\theta_x$ and scale parameter $\abs{c}\sigma_x$
+		\item $X+Y$ is sub-Weibull of tail parameter 
+		\item $XY$ is sub-Weibull
+	\end{enumerate}
+\end{lemma}
+
+
+
+\begin{proof}
+	\begin{enumerate}
+		\item Note that $\Pr[\abs{cX} \geq x] = \Pr[\abs{X} \geq x/\abs{c}] \leq 2\exp(-\left(\frac{x/\abs{c}}{\sigma_x}\right)^{1/\theta_x})$
+		\item We have that:
+		\begin{align*}
+		\norm{X + Y}_k \leq \norm{X}_k + \norm{Y}_k \leq C
+		\end{align*}
+	\end{enumerate}
+\end{proof}

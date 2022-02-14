@@ -1,0 +1,98 @@
+\documentclass{article}
+\usepackage{mathtools, amssymb, physics}
+\usepackage{amsthm}
+%\usepackage{fullpage}
+\usepackage[backend=biber]{biblatex}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue]{hyperref}
+\usepackage{url}
+\usepackage[ advantage,operators,adversary,landau,probability,notions,primitives,keys,ff, sets,asymptotics]{cryptocode}
+
+\usepackage{todonotes}
+
+\addbibresource{abbrev0.bib}
+\addbibresource{crypto_crossref.bib}
+\addbibresource{custom.bib}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{definition}{Definition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{example}{Example}
+
+\newcommand{\scalarfont}[1]{\MakeLowercase{#1}}
+\newcommand{\vfont}[1]{\mathbf{#1}}
+\newcommand{\mfont}[1]{\mathbf{#1}}
+\newcommand{\setfont}[1]{\mathbb{#1}}
+\newcommand{\dfont}[1]{\mathcal{#1}}
+
+\newcommand{\Zset}{\setfont{Z}}
+\newcommand{\Rset}{\setfont{R}}
+\newcommand{\Qset}{\setfont{Q}}
+\newcommand{\Cset}{\setfont{C}}
+\newcommand{\Nset}{\setfont{N}}
+\newcommand{\Oset}{\setfont{O}}
+\newcommand{\Aset}{\setfont{A}}
+
+\newcommand{\hide}[1]{}
+
+\newcommand{\ball}{\setfont{B}}
+
+\newcommand{\ideal}[1]{\left\langle #1\right\rangle}
+\newcommand{\ring}[1]{\Oset_{#1}}
+
+\newcommand{\expectation}{\mathbb{E}}
+
+\newcommand{\round}[1]{\left\lfloor#1\right\rceil}
+\newcommand{\error}{\mathsf{error}}
+\newcommand{\secret}{\mathsf{secret}}
+\newcommand{\samplefunc}{\mathsf{Sample}}
+
+\newcommand{\encode}{\mathsf{encode}}
+\newcommand{\decode}{\mathsf{decode}}
+
+\newcommand{\encaps}{\mathsf{Encaps}}
+\newcommand{\decaps}{\mathsf{Decaps}}
+
+\newcommand{\LWE}{\mathsf{LWE}}
+\renewcommand{\ip}[2]{\left\langle #1,#2\right\rangle}
+
+\newcommand{\makehint}{\mathsf{MakeHint}}
+\newcommand{\rec}{\mathsf{Rec}}
+
+\newcommand{\correct}{\mathsf{correct}}
+\newcommand{\cover}{\mathsf{cover}}
+\newcommand{\domain}{\mathsf{domain}}
+
+\newcommand{\ct}{\mathsf{ct}}
+\newcommand{\pubp}{\mathsf{pp}}
+
+
+\begin{document}
+	\title{The Design of Lattice-based Key-Encapsulation Mechanisms}
+	\author{Mark Schultz}
+	\maketitle
+	\begin{abstract}
+		We survey recent trends in the design of lattice-based KEMs, where we highlight the role played by certain coding-theoretic objects that are often implicitly defined in an exceedingly simple way.
+		This simple definition is known to be non-optimal from the perspective of the size of ciphertexts of the resulting scheme.
+		After surveying the general design paradigm of lattice-based KEMs, we survey recent papers exploring the use of better encodings in lattice-based cryptosystems.
+	\end{abstract}
+	
+	\section{Introduction}
+	\input{introduction.tex}
+	\section{Preliminaries}
+	\input{prelim.tex}
+	\section{Constructing Lattice-based KEMs}
+	\input{kem-constructions.tex}
+	\section{Lattice-based KEMs from a Theory perspective}
+	\input{frameworks.tex}
+	\section{Lattice-based KEMs from a Practical perspective}
+	\input{practice.tex}
+	\section{Other Interesting Constructions}
+	\input{examples.tex}
+	\section{Conclusion}
+	\input{conclusion.tex}
+	
+	\printbibliography
+	%\appendix
+	%\section{Explicit Analysis of Sub-Weibull Distributions}
+	%\input{sub-weibull.tex}
+\end{document}

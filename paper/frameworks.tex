@@ -1,0 +1,60 @@
+We next survey a few theoretical papers of interest to the construction of lattice-based KEMs.
+
+\subsection{Cryptographic Primitives from Linear Algebra}
+\label{ssec: crypt-from-lin-alg}
+The framework of \cite{cryptofromlinalg} that has inspired us to modularize our discussion of arithmetic and ``short'' elements is somewhat more specific than we have presented so far.
+Specifically, they consider the class of rings of the form
+\begin{equation*}
+\mathbb{Z}[x] / ((f(x), g(x))
+\end{equation*}
+where $g(x)$ is typically degree 1 or 2.
+This is somewhat different than the ``typical'' ring one works with in lattice-based cryptography
+\begin{equation*}
+\mathbb{Z}[x] / (f(x), q)\cong \mathbb{Z}_q[x] / (f(x))
+\end{equation*}
+or in LPN-based cryptography
+\begin{equation*}
+\mathbb{Z}[x] / (f(x), 2)\cong \mathbb{F}_2[x] / (f(x)).
+\end{equation*}
+The idea is that one can set $g(x) = q$ to capture both of these prior cases.
+One can additionally set $g(x) = x - b$.
+Reducing a polynomial $\sum_i a_i x^i\in\mathbb{Z}[x]$ to this setting yields the polynomial $\sum_i a_i b^i \bmod f(b)$, e.g. one performs modular (due to the $\bmod f(b)$) ``big integer'' (due to the $\sum_i a_i b^i$) arithmetic.
+The initial intention of this ``big integer'' variant of lattice-based cryptography is to reuse RSA coprocessors in embedded systems.
+
+\subsection{Wyner-Ziv Reconciliation for Key Exchange based on LWE}\label{ssec: wyner-ziv}
+This paper \cite{EPRINT:SalLuzLin20} builds a framework for the construction of reconciliation-based KEMs.
+It (implicitly) does this by showing that, given linear $C_i = (\encode_i, \decode_i)$ for $i\in\{0,1\}$ with message spaces $\setfont{M}_i$ that are \emph{nested}, meaning that:
+\begin{equation*}
+\encode_0(\setfont{M}_0)\subseteq \encode_1(\setfont{M}_1),\qquad C_1.\domain\subseteq C_0.\domain,
+\end{equation*}
+one can build a Key Consensus protocol from both of the codes.
+\begin{definition}
+	For $i\in\{0,1\}$ let $C_0\subseteq C_1$ be nested codes with message spaces $\setfont{M}_i$ and common ambient space $\setfont{X}$.
+	Define
+	\begin{align*}
+	\makehint(\vfont{v}) &= (h\gets \decode_1(\vfont{v})\bmod C_0, \decode_0(\vfont{v} - h))\\
+	\rec(\vfont{v}', h) &= \decode_0(\vfont{v}' - h)
+	\end{align*}
+	to be the KC protocol defined by the nested linear codes $C_0\subseteq C_1$.
+\end{definition} 
+Note that if one sets $\decode_1(\vfont{v}) = \vfont{v}$ to be the trivial code, one \emph{nearly} gets back the Key Consensus protocol of ex. \ref{ex: simpleKC}.
+The paper shows that with this construction, the nested condition immediately implies perfect security of the KC protocol.
+The story for correctness is somewhat worse --- the work only examines a single pair of nested codes $C_0\subseteq C_1$, moreover they choose $C_1$ to be trivial.
+Expanding the analysis of this protocol could be a quite interesting research direction.
+\subsection{Limits on KEMs built from RLWE}
+The final framework we survey \cite{EPRINT:GKRS20} examines the class of possible reconcilliation functions $\rec(\cdot)$.
+It is \emph{a priori} possible that a reconciliation function could not require a hint.
+As generating the hint is the only\footnote{If one first fixes  $\mfont{A}\in\ring{k, q}^{n\times n}$ as a public parameter, similar to how ``Diffie-Hellman groups'' have been standardized in the past.} ``interactive'' step of reconcilliation-based KEM, not requiring a hint would lead to non-interactive key exchange from LWE, which would be quite interesting.
+Unfortunately, \cite{EPRINT:GKRS20} shows that NIKE from LWE\footnote{We include the caveat that their result only discusses plain LWE and ring LWE, and not module LWE, or any LWR variants.} is unlikely to exist, at least when the LWE moduli $q = n^{O(1)}$.
+Moduli this small are known as \emph{polynomial modulus} in lattice-based cryptography, and are desirable for both security and efficiency.
+
+The paper considers reconciliation functions which can take as input some subset of
+\begin{itemize}
+	\item the other party's LWE share $\sigma_B$,
+	\item the public matrix $\mfont{A}$,
+	\item your own state $\state_A$,
+	\item your own LWE randomness $\vfont{e}_A\sample \LWE.\error(0; \mfont{A}, \state_A)$
+\end{itemize}
+In the most general setting, they notice that any reconciliation function must be unpredictable, even given the public parts of the transcript, so must \emph{also} be a form of weak pseudorandom function.
+As only recently \cite{EC:Kim20} have there been direct constructions of these from polynomial modulus, any such construction would be interesting in its own right.
+In other restricted settings they show impossibility --- either information-theoretic or computational under the hardness of LWE, but due to the particular restrictions these results should be seen as ``no-go'' theorems for designers of protocols, rather than ``hard'' impossibility results for the construction of NIKE via LWE\footnote{Such results do not currently exist, as it is known that indistinguishability obfuscation implies NIKE, and there are (currently unbroken) candidate iO constructions from LWE\cite{EPRINT:BDGM20a}.}.

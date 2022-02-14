@@ -1,0 +1,27 @@
+\BOOKMARK [1][-]{section.1}{Introduction}{}% 1
+\BOOKMARK [2][-]{subsection.1.1}{Goals of this Survey}{section.1}% 2
+\BOOKMARK [3][-]{subsubsection.1.1.1}{Steps towards Uniformly covering Lattice, Code, and Mersenne Prime-based Cryptography}{subsection.1.1}% 3
+\BOOKMARK [3][-]{subsubsection.1.1.2}{Smaller Lattice-based Ciphertexts from Non-trivial Encodings}{subsection.1.1}% 4
+\BOOKMARK [1][-]{section.2}{Preliminaries}{}% 5
+\BOOKMARK [2][-]{subsection.2.1}{Notation}{section.2}% 6
+\BOOKMARK [2][-]{subsection.2.2}{The Arithmetic of this Survey}{section.2}% 7
+\BOOKMARK [2][-]{subsection.2.3}{Small Elements in this Survey}{section.2}% 8
+\BOOKMARK [2][-]{subsection.2.4}{Cryptography}{section.2}% 9
+\BOOKMARK [2][-]{subsection.2.5}{Learning with Errors}{section.2}% 10
+\BOOKMARK [2][-]{subsection.2.6}{``Noisy'' Diffie-Hellman}{section.2}% 11
+\BOOKMARK [1][-]{section.3}{Constructing Lattice-based KEMs}{}% 12
+\BOOKMARK [2][-]{subsection.3.1}{Encryption-based KEMs}{section.3}% 13
+\BOOKMARK [2][-]{subsection.3.2}{Reconciliation-based KEMs}{section.3}% 14
+\BOOKMARK [2][-]{subsection.3.3}{Explicit Differences between the Frameworks}{section.3}% 15
+\BOOKMARK [2][-]{subsection.3.4}{Transforming to INDCCA2}{section.3}% 16
+\BOOKMARK [1][-]{section.4}{Lattice-based KEMs from a Theory perspective}{}% 17
+\BOOKMARK [2][-]{subsection.4.1}{Cryptographic Primitives from Linear Algebra}{section.4}% 18
+\BOOKMARK [2][-]{subsection.4.2}{Wyner-Ziv Reconciliation for Key Exchange based on LWE}{section.4}% 19
+\BOOKMARK [2][-]{subsection.4.3}{Limits on KEMs built from RLWE}{section.4}% 20
+\BOOKMARK [1][-]{section.5}{Lattice-based KEMs from a Practical perspective}{}% 21
+\BOOKMARK [2][-]{subsection.5.1}{Compression of Randomness}{section.5}% 22
+\BOOKMARK [2][-]{subsection.5.2}{Compression of LWE Shares}{section.5}% 23
+\BOOKMARK [1][-]{section.6}{Other Interesting Constructions}{}% 24
+\BOOKMARK [2][-]{subsection.6.1}{Practically Evaluating Non-trivial Codes}{section.6}% 25
+\BOOKMARK [2][-]{subsection.6.2}{Using Reconciliation Techniques for Encryption}{section.6}% 26
+\BOOKMARK [1][-]{section.7}{Conclusion}{}% 27

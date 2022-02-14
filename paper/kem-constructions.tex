@@ -1,0 +1,194 @@
+\label{sec: paradigms}
+We begin by formally describing archetypical examples of what have come to be known as ``encryption-based'' and ``reconciliation-based'' $\indcpa$-secure KEMs, before describing the approach to convert them to $\indccaii$-secure KEMs.
+The general strategy will be to achieve $\indccaii$-security via appealing to the Fujisaki-Okamoto transform \cite{JC:FujOka13}, which transforms an $\indcpa$-secure PKE (and a few other primitives, discussed in sub-section \ref{ssec: fo-transform}) into an $\indccaii$-secure KEM.
+For this reason, the ``encryption-based KEM'' we describe will actually be an $\indcpa$-secure PKE, which one can trivially convert into a KEM by encrypting a uniformly random secret key.
+
+We explicitly mention this conversion for two reason, namely
+\begin{itemize}
+	\item lattice-based KEMs are not perfectly correct, which required a re-analysis of the FO transform, and
+	\item one large way that encryption and reconciliation-based KEMs differ is in how well they behave with respect to the FO transform.
+\end{itemize}
+In particular, reconciliation-based KEMs require constructing a PKE from them before applying the transform, e.g. passing through something like hybrid encryption, which leads to somewhat less practical $\indccaii$-secure constructions.
+
+\subsection{Encryption-based KEMs}
+We first describe a simple framework where one combines the LWE-based noisy key agreement of fig. \ref{fig: LWE-Approx-Exchange} with a linear code with ambient space $\setfont{A}^m$.
+This framework is initially due to \cite{EC:LyuPeiReg13}, and is at the core of many of the most practical LWE-based KEMs, including all (LWE-based) NIST finalists.
+We delay exposition on the various optimizations that are used in practice until section \ref{sec: practical}.
+
+\begin{figure}[h]\label{fig: LPR PKE}
+\begin{minipage}{.3\linewidth}
+\procedure{
+	\kgen(\secparam)}{
+	\mfont{A} \sample \pgen(\secparam)\\
+	(\state_A, \sigma_A)\sample \mathsf{AContr}(\mfont{A})\\
+	\pk = (\mfont{A}, \sigma_A)\\
+	\sk = \state_A\\
+	\pcreturn \sk, \pk
+}
+\end{minipage}\hfill
+\begin{minipage}{.3\linewidth}
+\procedure{
+	$\enc_{\pk}(m)$}{
+	(\mfont{A}, \sigma_A) := \pk\\
+	(\state_B, \sigma_B) \sample \mathsf{BContr}(\mfont{A}^t)\\
+\scalarfont{v} \sample \LWE_{\vfont \state_B}(\encode(m); \sigma_A^t)\\
+\pcreturn \sigma_B, \scalarfont{v}}	
+\end{minipage}\hfill
+\begin{minipage}{.3\linewidth}
+	\procedure{
+		$\dec_{\sk}(\sigma_B, \scalarfont{v})$}{
+		\pcreturn \decode(\scalarfont{v}-\sk^t\sigma_B)}
+\end{minipage}
+
+\caption{The Lyubashevsky, Peikert, and Regev cryptosystem, parametrized by a linear code $C = (\encode, \decode)$.
+Note that as $v\sample \LWE(\encode(m); \sigma_A^t)$ computes the LWE function with respect to $\sigma_A^t\in\setfont{A}^{1\times m}$, $v\in\setfont{A}$ is a scalar, and that $\state_A, \state_B$ are elements of $\setfont{A}^m$.}
+\end{figure}
+
+One can relate to correctness of this scheme to the correctness of the noisy key agreement and the decoding region of the code $C$.
+We treat the case of $\LWE.\error(\cdot;\cdot,\cdot)$ being a fixed distribution independent of its inputs as it is somewhat simpler to write down, but the general case is immediate from inspecting definition \ref{def: pke}.
+
+\begin{theorem}\label{thm: lpr-correct-secure}
+	Let $n,m\in\Nset$.
+	Let $C = (\encode, \decode)$ be a linear code with message space $\setfont{M}$ and ambient space $\setfont{A}^m$.
+	Let $\Pi = (\pgen, \mathsf{AContr}, \mathsf{BContr}, \mathsf{AConv}, \mathsf{BConv})$ be noisy key agreement scheme with tolerable noise subset $D\subseteq \setfont{M}$, $\mathsf{ContrSp} = \setfont{A}^m$, $\mathsf{StateSp} = \supp{\LWE.\secret}$, and failure probability $\epsilon$.
+	Then, the PKE as defined in fig. \ref{fig: LPR PKE} $\delta$-correct for
+	\begin{equation*}
+	\delta = \Pr_{e'\sample \LWE.\error(0; 0, 0)}[e' + D\subseteq C.\error](1-\epsilon),
+	\end{equation*}
+	and $\indcpa$ secure under the decisional LWE assumption.
+\end{theorem}
+Deriving the correctness expression is fairly mechanical in this setting.
+Security follows from noticing that the transcript is $(\mfont{A}, \sigma_A, \sigma_B, v)$, and the non-uniform components $(\sigma_A, \sigma_B, v)$ can be made uniform by appealing to the LWE assumption multiple times.
+
+
+\subsection{Reconciliation-based KEMs}
+An alternative approach to building an LWE-based KEM is to design a generic primitive that turns noisy key agreement to exact key agreement.
+We follow the presentation of \cite{EPRINT:JinZha17}, which formally defines a primitive called \emph{Key Consensus} which serves the purposes that prior authors \cite{EPRINT:Ding12,PQCRYPTO:Peikert14} referred to as \emph{error reconciliation}.
+\begin{definition}[Key Consensus]
+	Let $\setfont{M}$ be a metric space with metric $d$, and $\setfont{K}$ be a key space, and $\setfont{H}$ be a ``Hint space''.
+	Let $\rho\in\Rset^+$.
+	A Key Consensus (KC) protocol (of noise tolerance $\rho$) is a pair of algorithms:
+	\begin{equation*}
+	\makehint : \setfont{M}\to \setfont{H}\times \setfont{K},\qquad \rec : \setfont{M}\times \setfont{H}\to \setfont{K}
+	\end{equation*}
+	such that the following properties hold:
+\begin{enumerate}
+	\item \textbf{Correctness}: $\forall m_1, m_2$ such that $d(m_1, m_2) \leq \rho$, if $(h, k) = \makehint(m_1)$, then $\rec(m_2, h) = k$.
+	\item \textbf{Security:} if $m\sample \setfont{M}$, and $(h, k) \sample\makehint(m)$, then $h, k$ are independent of eachother, and $k$ is uniformly distributed over $\setfont{K}$.
+\end{enumerate}	
+\end{definition}
+Given a KC protocol with high enough noise tolerance, it is straightforward to turn the aforementioned ``noisy'' Diffie-Hellman key exchange into a KEM.
+
+\begin{figure}\label{fig: ding-KEM}
+	\begin{minipage}{.3\linewidth}
+		\procedure{
+			\kgen(\secparam)}{
+			\mfont{A}\sample \pgen(\secparam)\\
+			\pk \sample (\mfont{A}, \LWE_{\sk}(0;\mfont{A}))\\
+			\pcreturn \sk, \pk
+		}
+	\end{minipage}\hfill
+	\begin{minipage}{.3\linewidth}
+		\procedure{
+			$\encaps(\pk)$}{
+			(\mfont{A}, \sigma_A) := \pk\\
+			(\state_B, \sigma_B) \sample \mathsf{BContr}(\mfont{A}^t)\\
+			v\sample \LWE_{\vfont{\state_B}}(0; \sigma_A^t)\\
+			h, k \sample \makehint(v)\\
+			\pcreturn k, (\sigma_B, h)}	
+	\end{minipage}\hfill
+	\begin{minipage}{.3\linewidth}
+		\procedure{
+			$\decaps(\sk, (\sigma_B, h))$}{
+			\pcreturn \rec(\sk^t\sigma_B, h)}
+	\end{minipage}
+\caption{The Ding Reconcilliation-based KEM \cite{EPRINT:Ding12}, where reconcilliation is done via a Key Consensus protocol.}
+\end{figure}
+
+
+\begin{theorem}
+	Let $n\in\Nset$.
+	Let $(\makehint, \rec)$ be a KC protocol with noise tolerance $\rho$ for some $\rho > 0$.
+	Let $\setfont{B}\subseteq \setfont{M}$ be the ball of radius $\rho$.
+	Then if $\Pi = (\pgen, \mathsf{AContr}, \mathsf{BContr}, \mathsf{AConv}, \mathsf{BConv})$ is a noisy key agreement protocol with a tolerable noise subset $D\supseteq \setfont{B}$ and failure probability $\epsilon$
+	Then the KEM in fig. \ref{fig: ding-KEM} is correct with probability $1-\epsilon$, and is $\indcpa$-secure under the decisional LWE assumption.
+\end{theorem}
+\begin{proof}
+Correctness follows directly from the definitions and the assumption that $\setfont{B}\subseteq D$ (as the precondition for noisy key consensus is by design the same as the postcondition of noisy key agreement).
+Security again follows via appealing to the decisional LWE assumption a few times to show the transcript is computationally indistinguishable from uniformly random.	
+\end{proof}
+
+\subsection{Explicit Differences between the Frameworks}
+After describing the protocols in terms of noisy key agreement, it is clear there are close similarities.
+In both constructions, one party computes $v\sample \LWE_{\state_B}(0; \sigma_A^t)$, and applies some mild post-processing to it:
+\begin{equation*}
+v\mapsto \makehint(v)\qquad\text{or}\qquad v\mapsto v + \encode(k)
+\end{equation*}
+before returning the result.
+To aid understanding, we discuss two explicit examples of schemes in these frameworks.
+For encryption, we remind the reader of the scaling code of ex. \ref{ex: scaling} for $p\mid q$, where:
+\begin{equation*}
+\encode(m) = (q/p)m,\qquad \decode(x) = \round{(p/q)x}
+\end{equation*}
+
+For key consensus, we present a construction 
+from \cite{EPRINT:JinZha17}.
+\begin{example}[``Simple'' KC]\label{ex: simpleKC}
+	Let $q = 2^{q'}, p= 2^{p'}$ for $q', p'\in\Nset$, and let $C = (\encode, \decode)$ be the scaling code of parameters $p, q$.
+	Define:
+	\begin{equation*}
+	\makehint(\vfont{v}) = ( \vfont{v}\bmod C,\ \decode(\vfont{v})),\qquad \rec(\vfont{v}', h) = 
+	\decode(\vfont{v}' - h)
+	\end{equation*}
+	Then $(\makehint, \rec)$ is a KC protocol with noise tolerance $\rho$ for any $\rho < \frac{q}{2p}$, where distances are measured in the $\ell_\infty$ norm.
+\end{example}
+If we look at the decryption and decapsulation functions of a reconcilliation-based KEM (using the simple KC of ex. \ref{ex: simpleKC})  and a PKE (using the scaling code of ex. \ref{ex: scaling}), we get that
+\begin{equation*}
+\dec_{\sk}(\sigma_B, v) = \decode(v - \sk^t\sigma_B),\qquad \decaps(\sk, (\sigma_B, h)) = \decode(\sk^t\sigma_B - h),
+\end{equation*}
+i.e. they are identical (up to a sign that does not matter).
+Note that while the expressions are nearly identical, $v, h$ are not.
+Recall that $v\in \setfont{A}$.
+If for some $m, q\in\Nset$ one has that $\setfont{A}\cong \Zset_q^m$ as a set\footnote{This nearly always happens, although the arithmetic of $\setfont{A}$ can be much more complex than that of the ring $\Zset_q^m$.}, then typically using reconcilliation, one can achieve $h\in\{0,1\}^{m}\subset \Zset_q^{m}\cong \setfont{A}$, i.e. one can achieve roughly a factor $\log_2 q\geq 10$ reduction in bandwidth for this particular element.
+Note that $\sigma_B\in\setfont{A}^n$ is of the same size in both paradigms.
+
+
+\subsection{Transforming to $\indcca2$}\label{ssec: fo-transform}
+The frameworks discussed so far yield $\indcpa$-secure constructions, while many practical applications need the stronger $\indcca$ notion of security.
+One typically achieves this via a generic ``transformation'', i.e. a construction that takes as input \emph{any} \indcpa-secure PKE and yields an \indcca-secure KEM.
+
+We survey such a transformation, namely the recent analysis of the Fujisaki-Okamoto transform \cite{C:FujOka99} in the quantum random oracle model for $\delta$-correct PKE \cite{TCC:HofHovKil17}.
+This work proceeds by decomposing the FO transform into two steps.
+The first step specifies the randomness that the PKE uses as a hash of the message to be encrypted, and later checks (via ``re-encryption'') that this was the randomness used in encryption.
+\begin{definition}[The $T$ Transform]
+	Let $(\kgen, \enc, \dec)$ be a PKE scheme, and let $G$ be a hash function.
+	Define the alternate encryption and decryption functions:
+	\begin{enumerate}
+		\item $\enc^1_{\pk}(m)$ returns $\enc_{\pk}(m ; G(m))$, meaning encrypts $m$ under $\pk$ using randomness $G(m)$
+		\item $\dec_{\sk}^1(c)$ first decrypts $m' = \dec_{\sk}(c)$. If this fails, or $\enc_{\pk}(m';G(m'))\neq c$, it returns $\bot$. Otherwise, it returns $m'$.
+	\end{enumerate}
+	Then the $T$ transform of $(\kgen, \enc, \dec)$ is $(\kgen, \enc^1,\dec^1)$.
+\end{definition}
+
+The second step has a number of possible transformations --- we cover the most common one among NIST candidates, namely the $U^{\not\bot}$ transform, which transforms the $T$ transform\footnote{The PKE that the $U^{\not \bot}$ transform is applied to need not be precisely the $T$ transform of an \indcpa-secure scheme, but we make this simplification to avoid mentioning yet another security notion we do not have space to formally discuss.} of a PKE $(\kgen, \enc, \dec)$, into a KEM.
+\begin{definition}[The $U^{\not\bot}$ Transform]
+	Let $(\kgen, \enc, \dec)$ be a PKE scheme, and let $(\kgen, \enc^1,\dec^1)$ be its $T$ transform.
+	Let $H$ be a hash function.
+	Define 
+	\begin{enumerate}
+		\item $\encaps(\pk)$: First sample $k\sample\setfont{K}$ for a key space $\setfont{K}$, compute $c\gets \enc_{\pk}^1(k)$, $K \gets H(c, k)$, and return $(c, K)$.
+		\item $\decaps_{\sk}(c)$ If $\dec_{\sk}^1(c)\neq \bot$, return $H(c, k)$, otherwise return $H(c, s)$, where $s$ is a random seed contained in $s$.
+	\end{enumerate}
+	Then the $U^{\not\bot}$ transform of $(\kgen, \enc^1, \dec^1)$ is said to be the KEM $(\kgen, \encaps, \decaps)$.
+\end{definition}
+
+Combined, \cite{TCC:HofHovKil17} shows that the $U^{\not\bot}\circ T$ transform takes an $\indcpa$-secure encryption scheme, and transforms it to an $\indcca$-secure KEM.
+The reductions are fairly tight in the classical random oracle model, but are non-tight in the quantum random oracle model.
+There have been follow-up works improving the tightness gap \cite{C:JZCWM18,EPRINT:JiaZhaMa19b}, but it is not closed yet.
+
+As mentioned previously, a significant limitation of the FO transform is that it applies to PKE, and not KEMs, so one has to pass through hybrid encryption to apply it to a KEM.
+It would be quite interesting if techniques were developed of similar practical efficiency to the FO transform that convert $\indcpa$-secure KEMs to $\indcca$-secure KEMs.
+
+One significant limitation of this technique is that if one starts with an $\indcpa$-secure KEM, one has to first use it to build a PKE before applying the transform. This leads to reconciliation-based constructions being less competetive\footnote{No NIST round 3 candidates are reconcilliation-based. There may be alternate (patent related) reasons for this. A fairly influential early ``practical'' scheme, NewHope \cite{USENIX:ADPS16}, was reconcilliation-based, although the later NIST submission \cite{EPRINT:ADPS16} was changed to be encryption-based.
+	There additionally exist other reconcilliation-based submissions which did not reach the third round --- in particular HILA5 \cite{SAC:Saarinen17}, which was merged with Round2 \cite{EPRINT:BBGRTT17} and advanced to the second round of the competition as Round5 \cite{EPRINT:BGLRST18}.} for building $\indcca$-secure KEMs.
+We discuss in sub-section \ref{ssec: enc-rec} a potential avenue to side-step this difficulty.

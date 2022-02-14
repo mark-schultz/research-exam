@@ -1,0 +1,41 @@
+[0] Config.pm:304> INFO - This is Biber 2.14 (beta)
+[0] Config.pm:307> INFO - Logfile is 'main.blg'
+[49] biber:322> INFO - === Tue Jun 15, 2021, 02:45:53
+[63] Biber.pm:415> INFO - Reading 'main.bcf'
+[120] Biber.pm:943> INFO - Found 41 citekeys in bib section 0
+[135] Biber.pm:4256> INFO - Processing section 0
+[136] Utils.pm:75> INFO - Globbing data source 'abbrev0.bib'
+[136] Utils.pm:91> INFO - Globbed data source 'abbrev0.bib' to abbrev0.bib
+[136] Utils.pm:75> INFO - Globbing data source 'crypto_crossref.bib'
+[136] Utils.pm:91> INFO - Globbed data source 'crypto_crossref.bib' to crypto_crossref.bib
+[136] Utils.pm:75> INFO - Globbing data source 'custom.bib'
+[136] Utils.pm:91> INFO - Globbed data source 'custom.bib' to custom.bib
+[145] Biber.pm:4455> INFO - Looking for bibtex format file 'abbrev0.bib' for section 0
+[171] bibtex.pm:1653> INFO - LaTeX decoding ...
+[1330] bibtex.pm:1471> INFO - Found BibTeX data source 'abbrev0.bib'
+[1861] Biber.pm:4455> INFO - Looking for bibtex format file 'crypto_crossref.bib' for section 0
+[3179] bibtex.pm:1653> INFO - LaTeX decoding ...
+[34875] bibtex.pm:1471> INFO - Found BibTeX data source 'crypto_crossref.bib'
+[37418] Biber.pm:4455> INFO - Looking for bibtex format file 'custom.bib' for section 0
+[37420] bibtex.pm:1653> INFO - LaTeX decoding ...
+[37435] bibtex.pm:1471> INFO - Found BibTeX data source 'custom.bib'
+[37514] Utils.pm:293> WARN - month field '5~7--9,' in entry 'AFRICACRYPT18' is not an integer - this will probably not sort properly.
+[37516] Utils.pm:293> WARN - month field '8~19--23,' in entry 'C18-3' is not an integer - this will probably not sort properly.
+[37519] Utils.pm:293> WARN - month field '5~22--24,' in entry 'STOC05' is not an integer - this will probably not sort properly.
+[37519] Utils.pm:293> WARN - month field '5~22--24,' in entry 'STOC96' is not an integer - this will probably not sort properly.
+[37524] Utils.pm:293> WARN - month field '10~24--28,' in entry 'CCS16' is not an integer - this will probably not sort properly.
+[37527] Utils.pm:293> WARN - month field '8~10--12,' in entry 'USENIX16' is not an integer - this will probably not sort properly.
+[37529] Utils.pm:293> WARN - month field '12~1--5,' in entry 'TCC19-2' is not an integer - this will probably not sort properly.
+[37532] Utils.pm:293> WARN - month field '11~12--15,' in entry 'TCC17-1' is not an integer - this will probably not sort properly.
+[37535] Utils.pm:293> WARN - month field '5~26--30,' in entry 'EC13' is not an integer - this will probably not sort properly.
+[37536] Utils.pm:293> WARN - month field '10~1--3' in entry 'PQCRYPTO14' is not an integer - this will probably not sort properly.
+[37538] Utils.pm:293> WARN - month field '8~15--19,' in entry 'C99' is not an integer - this will probably not sort properly.
+[37541] Utils.pm:293> WARN - month field '8~16--18,' in entry 'SAC17' is not an integer - this will probably not sort properly.
+[37544] Utils.pm:293> WARN - month field '5~10--14,' in entry 'EC20-2' is not an integer - this will probably not sort properly.
+[37580] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
+[37580] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[37580] Biber.pm:4084> INFO - Sorting list 'nty/global//global/global' of type 'entry' with template 'nty' and locale 'en-US'
+[37580] Biber.pm:4090> INFO - No sort tailoring available for locale 'en-US'
+[37609] bbl.pm:652> INFO - Writing 'main.bbl' with encoding 'UTF-8'
+[37628] bbl.pm:755> INFO - Output to main.bbl
+[37628] Biber.pm:128> INFO - WARNINGS: 13
